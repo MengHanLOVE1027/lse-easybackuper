@@ -2,7 +2,7 @@
     "format_version": 3,
     "format_uuid": "289f771f-2c9a-4d73-9f3f-8492495a924d",
     "tooth": "github.com/MengHanLOVE1027/lse-easybackuper",
-    "version": "0.4.6-beta.4",
+    "version": "0.4.6-beta.5",
     "info": {
         "name": "EasyBackuper",
         "description": "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件 / A lightweight, high-performance, and feature-rich hot backup plugin for Minecraft servers based on LSE.",

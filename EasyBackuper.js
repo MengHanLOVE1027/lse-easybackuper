@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.6-beta.4",
+    plugin_version = "0.4.6-beta.5",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
@@ -328,6 +328,8 @@ let scheduled_tasks_status = scheduled_tasks['Status']
 let scheduled_tasks_cron = scheduled_tasks['Cron']
 let cronExpr = scheduled_tasks_cron
 let parsed = parseCronExpression(cronExpr)
+let cronTimerHandle = null       // setInterval 句柄
+let lastCronTriggerSecond = -1   // 上次 cron 触发的秒级时间戳，防止同秒重复
 
 // 获取配置文件中Auto_Clean配置内容
 let auto_cleaup = pluginConfig.get('Auto_Clean')
@@ -342,14 +344,9 @@ let use_number_detection_mode = use_number_detection['Mode']
 let Debug_Morelogs = pluginConfig.get("Debug_MoreLogs")
 let Debug_Morelogs_Player = pluginConfig.get("Debug_MoreLogs_Player")
 let Debug_Morelogs_Cron = pluginConfig.get("Debug_MoreLogs_Cron")
-let Cron_Use_Backup = true
-
-// 回档相关变量
-let is_restoring = false
-let pending_restore_index = null
-
 // 备份状态变量
 let is_backing_up = false
+let is_restoring = false
 
 // ── 全局随机颜色对（Logo、Tip、logInfo 共用）────────────────
 function randomVividColor() {
@@ -591,75 +588,103 @@ function parseCronPart(part, min, max, allowNames = false) {
  * @param {JSON} parsed Cron表达式(解析后)
  * @param {Function} callback 回调函数
  * @returns {Array} 秒，分，时，日期，月份，星期
+/**
+ * 纯时间匹配检测——只判断当前时间是否命中 cron，不执行任何副作用
+ * @param {Object} parsed 解析后的 cron 表达式
+ * @returns {boolean} 是否命中
  */
-function checkCronAndRun(parsed, callback) {
+function cronMatchesNow(parsed) {
     let now = new Date()
     let currentSecond = now.getSeconds()
     let currentMinute = now.getMinutes()
     let currentHour = now.getHours()
     let currentDayOfMonth = now.getDate()
-    let currentMonth = now.getMonth() + 1; // 月份是从 0 开始的
-    let currentDayOfWeek = now.getDay() // 0 表示周日，1 表示周一，等等
+    let currentMonth = now.getMonth() + 1
+    let currentDayOfWeek = now.getDay()
 
-    // 检查秒
-    if (!parsed.second.includes(currentSecond)) {
-        return;
-    }
+    if (!parsed.second.includes(currentSecond))   return false
+    if (!parsed.minute.includes(currentMinute))   return false
+    if (!parsed.hour.includes(currentHour))       return false
+    if (!parsed.dayOfMonth.includes(currentDayOfMonth)) return false
+    if (!parsed.month.includes(currentMonth))     return false
+    if (!parsed.dayOfWeek.includes(currentDayOfWeek)) return false
 
-    // 检查分钟
-    if (!parsed.minute.includes(currentMinute)) {
-        return;
-    }
+    return true
+}
 
-    // 检查小时
-    if (!parsed.hour.includes(currentHour)) {
-        return;
-    }
+/**
+ * Cron 命中时触发——带防重守卫
+ * 使用秒级时间戳 + is_backing_up 双重保护，彻底杜绝重复备份
+ */
+function onCronTrigger() {
+    let now = new Date()
+    let triggerKey = Math.floor(now.getTime() / 1000)  // 秒级时间戳
 
-    // 检查日期
-    if (!parsed.dayOfMonth.includes(currentDayOfMonth) && !parsed.dayOfMonth.includes('*')) {
-        return;
-    }
-
-    // 检查月份
-    if (!parsed.month.includes(currentMonth)) {
-        return;
-    }
-
-    // 检查星期几
-    if (!parsed.dayOfWeek.includes(currentDayOfWeek) && !parsed.dayOfWeek.includes('*')) {
-        return;
-    }
-
-    // 退出循环调用(防止过多的调用备份)
-    if (Cron_Use_Backup == false) {
-        // 延迟1.5s后允许下一次Cron检测到后进行调用备份
-        setTimeout(() => {
-            Cron_Use_Backup = true
-        }, 1500);
-        // 退出onTick的循环，防止运行callback()
+    // 守卫1：同秒内只触发一次
+    if (triggerKey === lastCronTriggerSecond) {
+        if (Debug_Morelogs_Cron) {
+            pluginPrint(`Cron 跳过：同秒已触发过 (sec=${triggerKey})`, "DEBUG")
+        }
         return
     }
 
-    // 如果所有条件都满足，执行回调函数
-    callback()
-}
-/**
- * Cron与当前时间对应时运行代码
- */
-function logCurrentTime() {
-    // 调试信息(在配置文件中Debug_MoreLogs_Cron开启)
+    // 守卫2：上次备份还没结束，跳过
+    if (is_backing_up) {
+        if (Debug_Morelogs_Cron) {
+            pluginPrint("Cron 跳过：上一次备份仍在进行中", "DEBUG")
+        }
+        return
+    }
+
+    // 标记本轮触发
+    lastCronTriggerSecond = triggerKey
+
     if (Debug_Morelogs_Cron) {
-        let now = new Date()
         pluginPrint(`Current time: ${now.toDateString()} ${now.toTimeString()}`, "DEBUG")
     }
 
-    // 防止1秒内20游戏刻重复调用备份
-    if (Cron_Use_Backup == true) {
-        pluginPrint("自动备份正在启动中...", "INFO")
-        Start()
-        // 清空数值方便下次被正确调用时可以继续备份
-        Cron_Use_Backup = false
+    pluginPrint("自动备份正在启动中...", "INFO")
+    Start()
+}
+
+/**
+ * 启动 cron 调度器——用 setInterval 每秒检测，替代 onTick 轮询
+ */
+function startCronScheduler() {
+    if (cronTimerHandle) return  // 已经在运行
+
+    if (Debug_Morelogs_Cron) {
+        pluginPrint("Cron 调度器已启动（1s 精度）", "DEBUG")
+    }
+
+    cronTimerHandle = setInterval(() => {
+        if (!scheduled_tasks_status) return
+        if (!cronMatchesNow(parsed)) return
+        onCronTrigger()
+    }, 1000)
+}
+
+/**
+ * 停止 cron 调度器
+ */
+function stopCronScheduler() {
+    if (cronTimerHandle) {
+        clearInterval(cronTimerHandle)
+        cronTimerHandle = null
+        if (Debug_Morelogs_Cron) {
+            pluginPrint("Cron 调度器已停止", "DEBUG")
+        }
+    }
+}
+
+/**
+ * 重启 cron 调度器（配置重载后调用）
+ */
+function restartCronScheduler() {
+    stopCronScheduler()
+    lastCronTriggerSecond = -1  // 重置触发记录
+    if (scheduled_tasks_status) {
+        startCronScheduler()
     }
 }
 // #endregion
@@ -1804,6 +1829,8 @@ function ReloadPlugin() {
     scheduled_tasks_cron = scheduled_tasks['Cron']
     cronExpr = scheduled_tasks_cron
     parsed = parseCronExpression(cronExpr)
+    // 重启 Cron 调度器（应用新的 cron 表达式和开关状态）
+    restartCronScheduler()
     // Auto_Clean重载
     auto_cleaup = pluginConfig.get('Auto_Clean')
     use_number_detection = auto_cleaup['Use_Number_Detection']
@@ -2098,19 +2125,16 @@ function Loadplugin() {
         }
         // #endregion
     })
-    // NOTE: "onTick"
-    mc.listen("onTick", () => {
-        // 是否开启Cron定时任务
-        if (scheduled_tasks_status) {
-            // 检测时间是否匹配，然后调用函数
-            checkCronAndRun(parsed, logCurrentTime)
-        }
-    })
+    // 启动 Cron 定时调度器（setInterval 每秒检测，替代 onTick 轮询）
+    if (scheduled_tasks_status) {
+        startCronScheduler()
+    }
 
 }
 
 // NOTE: "onUnload"
 ll.onUnload(() => {
+    stopCronScheduler()
     pluginPrint("插件卸载中...", "INFO")
     pluginPrint("插件卸载完成", "INFO")
 })
