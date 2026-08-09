@@ -227,7 +227,7 @@ jobs:
 
           1. 下载 \`EasyBackuper-v${VERSION}.zip\`
           2. 解压到服务器的 \`plugins/\` 目录
-          3. 重启服务器或使用 \`lse reload\` 重载插件
+          3. 重启服务器或使用 \`ll reload EasyBackuper\` 重载插件
 
           安装后的目录结构：
           \`\`\`
