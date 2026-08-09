@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.6-beta.3",
+    plugin_version = "0.4.6-beta.4",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
