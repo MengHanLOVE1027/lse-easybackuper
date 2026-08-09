@@ -1,0 +1,269 @@
+name: Build & Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  # ──────────────────────────────────────────────────
+  # 跨平台编译 mhlove-truncate（PyInstaller 不支持交叉编译）
+  # ──────────────────────────────────────────────────
+  build-truncate:
+    name: Build truncate (${{ matrix.label }})
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            artifact: mhlove-truncate.exe
+          - os: ubuntu-latest
+            label: Linux
+            artifact: mhlove-truncate
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build ${{ matrix.artifact }}
+        working-directory: truncate-python
+        shell: bash
+        run: |
+          pyinstaller -F -c -i 梦涵LOVE.ico -n mhlove-truncate main.py
+          echo "Built: ${{ matrix.artifact }}"
+          ls -la dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: truncate-${{ matrix.label }}
+          path: truncate-python/dist/${{ matrix.artifact }}
+
+  # ──────────────────────────────────────────────────
+  # 发布
+  # ──────────────────────────────────────────────────
+  release:
+    name: Build & Release
+    needs: build-truncate
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 提取版本号 ──
+      - name: Get version from manifest
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Source version: $VERSION"
+
+          case "$VERSION" in
+            *beta*|*alpha*|*rc*|*dev*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *)                         echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      # ── 检查版本是否已发布 ──
+      - name: Check if version already released
+        id: check
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v${VERSION}"
+
+          git fetch --tags --force
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag $TAG already exists, skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag $TAG does not exist, will create it."
+          fi
+
+      # ── 创建 Tag ──
+      - name: Create and push tag
+        if: steps.check.outputs.exists == 'false'
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v${VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "Created and pushed tag: $TAG"
+
+      # ── 下载编译产物 ──
+      - name: Download truncate (Windows)
+        if: steps.check.outputs.exists == 'false' || github.event_name == 'workflow_dispatch'
+        uses: actions/download-artifact@v4
+        with:
+          name: truncate-Windows
+          path: truncate-bin/
+
+      - name: Download truncate (Linux)
+        if: steps.check.outputs.exists == 'false' || github.event_name == 'workflow_dispatch'
+        uses: actions/download-artifact@v4
+        with:
+          name: truncate-Linux
+          path: truncate-bin/
+
+      # ── 构建发布包 ──
+      - name: Build release package
+        if: steps.check.outputs.exists == 'false' || github.event_name == 'workflow_dispatch'
+        id: package
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_NAME="EasyBackuper-v${VERSION}.zip"
+          PACKAGE_DIR="EasyBackuper"
+
+          mkdir -p "${PACKAGE_DIR}"
+
+          # 复制插件文件
+          cp EasyBackuper.js   "${PACKAGE_DIR}/"
+          cp manifest.json     "${PACKAGE_DIR}/"
+          cp 7za.exe           "${PACKAGE_DIR}/"
+
+          # 复制跨平台编译产物
+          cp truncate-bin/mhlove-truncate.exe  "${PACKAGE_DIR}/"
+          cp truncate-bin/mhlove-truncate      "${PACKAGE_DIR}/"
+          chmod +x "${PACKAGE_DIR}/mhlove-truncate"
+
+          # 打包
+          zip -r "${ZIP_NAME}" "${PACKAGE_DIR}"
+
+          echo "----- Package -----"
+          ls -lh "${ZIP_NAME}"
+          echo ""
+          echo "Contents:"
+          unzip -l "${ZIP_NAME}"
+
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+
+      # ── 生成 Release 说明 ──
+      - name: Generate release notes
+        if: steps.check.outputs.exists == 'false' || github.event_name == 'workflow_dispatch'
+        id: changelog
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v${VERSION}"
+
+          case "$VERSION" in
+            *beta*|*alpha*|*rc*|*dev*) TYPE="🧪 测试版" ;;
+            *)                         TYPE="🚀 正式版" ;;
+          esac
+
+          git fetch --tags --force
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "${TAG}" | head -n1)
+
+          if [ -n "$PREV_TAG" ]; then
+            DETAILS=$(gh api "repos/${{ github.repository }}/compare/${PREV_TAG}...HEAD" \
+              --jq '[.commits[]? | select(.author.login != "github-actions[bot]")] | map("- \(.commit.message | split("\n")[0]) (@\(.author.login))") | join("\n")' \
+              2>/dev/null || echo "")
+
+            AUTHORS=$(gh api "repos/${{ github.repository }}/compare/${PREV_TAG}...HEAD" \
+              --jq '[.commits[]?.author.login // empty] | unique | map(select(. != "github-actions[bot]")) | map("@" + .) | join(" ")' \
+              2>/dev/null || echo "")
+
+            CHANGELOG_LINK="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+          else
+            DETAILS="- 🎉 EasyBackuper v${VERSION} 首次发布"
+            AUTHORS=""
+            CHANGELOG_LINK=""
+          fi
+
+          DETAILS="${DETAILS:-（暂无提交信息）}"
+          AUTHORS="${AUTHORS:-（暂无）}"
+
+          cat > /tmp/release_body.md <<BODYEOF
+          ## ${TYPE}: EasyBackuper v${VERSION}
+
+          ### 📦 下载 · Downloads
+
+          | 文件 | 说明 |
+          |------|------|
+          | \`EasyBackuper-v${VERSION}.zip\` | 完整插件包（Windows + Linux） |
+
+          > 解压后放入 \`plugins/\` 目录即可使用。
+
+          ### 📝 更新内容 · Changes
+
+          ${DETAILS}
+
+          ### 👥 贡献者 · Contributors
+
+          ${AUTHORS}
+
+          ### 🔧 安装 · Installation
+
+          1. 下载 \`EasyBackuper-v${VERSION}.zip\`
+          2. 解压到服务器的 \`plugins/\` 目录
+          3. 重启服务器或使用 \`lse reload\` 重载插件
+
+          安装后的目录结构：
+          \`\`\`
+          plugins/
+          └── EasyBackuper/
+              ├── EasyBackuper.js
+              ├── manifest.json
+              ├── 7za.exe
+              ├── mhlove-truncate.exe   # Windows
+              └── mhlove-truncate       # Linux
+          \`\`\`
+          BODYEOF
+
+          if [ -n "$CHANGELOG_LINK" ]; then
+            printf '\n**Full Changelog**: %s\n' "$CHANGELOG_LINK" >> /tmp/release_body.md
+          fi
+
+          {
+            echo 'body<<BODYEOF'
+            cat /tmp/release_body.md
+            echo 'BODYEOF'
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Release notes generated"
+
+      # ── 发布 Release ──
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: "v${{ steps.version.outputs.version }}"
+          body: ${{ steps.changelog.outputs.body }}
+          draft: false
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
+          files: |
+            ${{ steps.package.outputs.zip_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

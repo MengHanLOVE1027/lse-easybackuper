@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "v0.4.5",
+    plugin_version = "0.4.6-beta.1",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
@@ -1950,7 +1950,7 @@ function Loadplugin() {
 ██╔══╝  ██╔══██║╚════██║  ╚██╔╝  ██╔══██╗██╔══██║██║     ██╔═██╗ ██║   ██║██╔═══╝ ██╔══╝  ██╔══██╗
 ███████╗██║  ██║███████║   ██║   ██████╔╝██║  ██║╚██████╗██║  ██╗╚██████╔╝██║     ███████╗██║  ██║ 
 ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝   `)
-    pluginPrint(`作者：梦涵LOVE          版本：${plugin_version}`)
+    pluginPrint(`作者：梦涵LOVE          版本：v${plugin_version}`)
     pluginPrint("================================================================================")
     pluginPrint(`${plugin_name} - ${plugin_description}`)
     pluginPrint("感谢您使用Easy系列插件！")
@@ -1958,7 +1958,7 @@ function Loadplugin() {
     pluginPrint(`GitHub 仓库：${plugin_github_link}`)
     pluginPrint(`插件MineBBS资源帖：${plugin_minebbs_link}`)
     pluginPrint("Easy系列插件交流群：1083195477")
-    pluginPrint(`作者：梦涵LOVE | 版本：${plugin_version}`)
+    pluginPrint(`作者：梦涵LOVE | 版本：v${plugin_version}`)
     pluginPrint("================================================================================")
 
     let a = "自动备份状态：" + (scheduled_tasks_status ? "已启用" : "已禁用")

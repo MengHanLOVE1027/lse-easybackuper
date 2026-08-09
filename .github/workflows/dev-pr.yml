@@ -1,0 +1,105 @@
+name: Dev → Main PR
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    name: Create PR to main
+    runs-on: ubuntu-latest
+    # 跳过从 main 合并到 dev 的提交（避免循环 PR）
+    if: github.ref == 'refs/heads/dev'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if PR already exists
+        id: check
+        shell: bash
+        run: |
+          OPEN_PR=$(gh pr list --base main --head dev --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -n "$OPEN_PR" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "pr_number=$OPEN_PR" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build PR body
+        id: body
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # 一次 API 调用获取所有提交和作者
+          git fetch origin main
+          COMMITS=$(gh api "repos/${{ github.repository }}/compare/main...dev" \
+            --jq '[.commits[]? | "- \(.commit.message | split("\n")[0]) (@\(.author.login // "unknown"))"] | join("\n")' 2>/dev/null)
+          COMMITS="${COMMITS:-无新提交}"
+
+          # 提取贡献者
+          AUTHORS=$(gh api "repos/${{ github.repository }}/compare/main...dev" \
+            --jq '[.commits[].author.login // empty] | unique | map(select(. != null and . != "github-actions[bot]")) | map("@" + .) | join(" ")' 2>/dev/null || echo "")
+
+          # 判断版本类型
+          case "$VERSION" in
+            *beta*|*alpha*|*rc*|*dev*) TYPE="🧪 测试版" ;;
+            *) TYPE="🚀 正式版" ;;
+          esac
+
+          BODY=$(cat <<EOF
+          ## ${TYPE}: EasyBackuper v${VERSION}
+
+          ### 📝 更新内容
+          ${COMMITS}
+
+          ### 👥 贡献者
+          ${AUTHORS}
+          EOF
+          )
+
+          {
+            echo "BODY<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create or Update PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
+            echo "更新已有 PR #${{ steps.check.outputs.pr_number }}"
+            gh pr edit "${{ steps.check.outputs.pr_number }}" \
+              --title "v${{ steps.version.outputs.version }}: Dev → Main" \
+              --body "${{ steps.body.outputs.BODY }}"
+          else
+            echo "创建新 PR"
+            gh pr create \
+              --base main \
+              --head dev \
+              --title "v${{ steps.version.outputs.version }}: Dev → Main" \
+              --body "${{ steps.body.outputs.BODY }}"
+          fi
