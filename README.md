@@ -318,6 +318,14 @@ LSE-EasyBackuper 是一个专为 LeviLamina 服务器设计的备份插件，旨
 
 **⭐ 如果这个项目对你有帮助，请给我们一个 Star！**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=MengHanLOVE1027/lse-easybackuper&type=Date)](https://star-history.com/#MengHanLOVE1027/lse-easybackuper&Date)
+## Star History
+
+<a href="https://www.star-history.com/?repos=MengHanLOVE1027%2Flse-easybackuper&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=MengHanLOVE1027/lse-easybackuper&type=date&theme=dark&legend=top-left&sealed_token=G-odFNASESeJLePtOefXQLA641aesmd5IE8z6PWpi3W90WGRTxh_olFBXjV1K77M-TlmRFzmXx4JbZV2cLW7p7d8bCSyH6ng4ePxPN5rL1pXuH4KQJ1BzptJbg1P0kER7HS936lBwbyD67GcP1FKPFbbq69f0nmdMwX2TQHAP9Y6oGNI3DfLLtelH7u6" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=MengHanLOVE1027/lse-easybackuper&type=date&legend=top-left&sealed_token=G-odFNASESeJLePtOefXQLA641aesmd5IE8z6PWpi3W90WGRTxh_olFBXjV1K77M-TlmRFzmXx4JbZV2cLW7p7d8bCSyH6ng4ePxPN5rL1pXuH4KQJ1BzptJbg1P0kER7HS936lBwbyD67GcP1FKPFbbq69f0nmdMwX2TQHAP9Y6oGNI3DfLLtelH7u6" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=MengHanLOVE1027/lse-easybackuper&type=date&legend=top-left&sealed_token=G-odFNASESeJLePtOefXQLA641aesmd5IE8z6PWpi3W90WGRTxh_olFBXjV1K77M-TlmRFzmXx4JbZV2cLW7p7d8bCSyH6ng4ePxPN5rL1pXuH4KQJ1BzptJbg1P0kER7HS936lBwbyD67GcP1FKPFbbq69f0nmdMwX2TQHAP9Y6oGNI3DfLLtelH7u6" />
+ </picture>
+</a>
 
 </div>
