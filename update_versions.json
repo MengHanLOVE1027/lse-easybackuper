@@ -1,6 +1,12 @@
 {
-    "latest_version": "0.4.6",
+    "latest_version": "0.4.7",
     "versions": {
+        "": {
+            "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
+            "update_content": "fix: 更新版本号至 0.4.7，修复部分 bug，优化备份状态管理",
+            "author": "梦涵LOVE",
+            "update_time": "2026-08-09 21:24:00"
+        },
         "0.4.6": {
             "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
             "update_content": "fix: 更新版本号至 0.4.6，修复部分 bug，优化备份状态管理，修复cron触发时机",

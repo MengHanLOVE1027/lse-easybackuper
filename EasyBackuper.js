@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.6",
+    plugin_version = "0.4.7",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
@@ -1821,8 +1821,7 @@ function continueRestore(player_name, restore_index, backup_files) {
  * @returns {Array} (数组)配置文件重载状态[0]
  */
 function ReloadPlugin() {
-    let a = []
-    a = pluginConfig.reload() // 配置文件重载
+    pluginConfig.reload() // 配置文件重载
     // Debug相关
     Debug_Morelogs = pluginConfig.get("Debug_MoreLogs")
     Debug_Morelogs_Player = pluginConfig.get("Debug_MoreLogs_Player")
@@ -1841,7 +1840,7 @@ function ReloadPlugin() {
     use_number_detection_status = use_number_detection['Status']
     use_number_detection_max_number = use_number_detection['Max_Number']
     use_number_detection_mode = use_number_detection['Mode']
-    return a
+    return true
 }
 // #endregion
 
@@ -1891,16 +1890,16 @@ function RegisterCmd() {
         // 如果有选项就进行判断
         switch (results.action) {
             case "reload": // 重载插件配置
-                let a = ReloadPlugin()[0] // 读取返回值数组的第一个
-                let x = "重载中..." + '\n' + "配置文件：" + a + '\n' + '\n'
+                ReloadPlugin()
+                let x = "重载中..." + '\n' + "配置文件：已重载" + '\n' + '\n'
                 let y = "自动备份状态：" + scheduled_tasks_status + '\n' + "自动清理状态：" + use_number_detection_status + '\n'
                 let z = "Debug更多日志状态(控制台)：" + pluginConfig.get('Debug_MoreLogs') + '\n' + "Debug更多日志状态(玩家)：" + pluginConfig.get('Debug_MoreLogs_Player') + '\n' + "Debug更多日志状态(Cron)：" + pluginConfig.get('Debug_MoreLogs_Cron')
                 return output.success(x + y + z)
 
             case "init": // 初始化配置文件
                 InitPluginConfig()
-                let c = ReloadPlugin()[0] // 读取返回值数组的第一个
-                let e = "重载中..." + '\n' + "配置文件：" + c + '\n' + '\n'
+                ReloadPlugin()
+                let e = "重载中..." + '\n' + "配置文件：已重载" + '\n' + '\n'
                 let f = "自动备份状态：" + scheduled_tasks_status + '\n' + "自动清理状态：" + use_number_detection_status + '\n'
                 let g = "Debug更多日志状态(控制台)：" + pluginConfig.get('Debug_MoreLogs') + '\n' + "Debug更多日志状态(玩家)：" + pluginConfig.get('Debug_MoreLogs_Player') + '\n' + "Debug更多日志状态(Cron)：" + pluginConfig.get('Debug_MoreLogs_Cron')
                 return output.success("初始化文件成功" + '\n' + e + f + g)
