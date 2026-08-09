@@ -132,6 +132,22 @@ jobs:
           name: truncate-Linux
           path: truncate-bin/
 
+      # ── 下载 7za.exe（未被 git 跟踪，CI 中需从官方下载）──
+      - name: Download 7za.exe
+        if: steps.check.outputs.exists == 'false' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          # 安装 p7zip 用于解压 .7z 包
+          sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full
+
+          # 从 7-Zip 官方下载 extra 包（含独立版 7za.exe）
+          SEVENZIP_URL="https://www.7-zip.org/a/7z2408-extra.7z"
+          wget -q "$SEVENZIP_URL" -O 7z-extra.7z
+          7z x 7z-extra.7z -o7z-extra
+
+          ls -la 7z-extra/
+          echo "7za.exe downloaded successfully"
+
       # ── 构建发布包 ──
       - name: Build release package
         if: steps.check.outputs.exists == 'false' || github.event_name == 'workflow_dispatch'
@@ -147,7 +163,7 @@ jobs:
           # 复制插件文件
           cp EasyBackuper.js   "${PACKAGE_DIR}/"
           cp manifest.json     "${PACKAGE_DIR}/"
-          cp 7za.exe           "${PACKAGE_DIR}/"
+          cp 7z-extra/7za.exe  "${PACKAGE_DIR}/"
 
           # 复制跨平台编译产物
           cp truncate-bin/mhlove-truncate.exe  "${PACKAGE_DIR}/"
