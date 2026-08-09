@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.6-beta.5",
+    plugin_version = "0.4.6",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
@@ -1273,6 +1273,8 @@ function Backup(pl, callback) {
                 }
 
                 mc.runcmd("save resume") // 恢复存档写入
+                is_backing_up = false
+                File.delete(backup_tmp_path)
                 clearInterval(check_copy) // 退出循环函数
             }
         }, 200)
@@ -1311,6 +1313,9 @@ function Backup(pl, callback) {
                         pl.tell("备份成功！压缩包位于：" + archivePath + ` (${archiveSizeMB} MB)`)
                     }
                     File.delete(backup_tmp_path)
+
+                    // 重置备份状态，允许下次 cron 触发
+                    is_backing_up = false
 
                     // 开始清除冗余备份
                     auto_cleaup = pluginConfig.get('Auto_Clean')
@@ -1353,6 +1358,7 @@ function Backup(pl, callback) {
                     }
 
                     File.delete(backup_tmp_path)
+                    is_backing_up = false
                     clearInterval(check_compress) // 退出循环函数
 
                     // 调用回调函数
@@ -1378,6 +1384,7 @@ function Backup(pl, callback) {
                 }
 
                 File.delete(backup_tmp_path)
+                is_backing_up = false
                 clearInterval(check_compress) // 退出循环函数
 
                 // 调用回调函数
@@ -1387,9 +1394,6 @@ function Backup(pl, callback) {
             }
         }, 200)
         // #endregion
-
-        // 重置备份状态
-        is_backing_up = false
 
         return false
     }
