@@ -41,7 +41,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install PyInstaller
-        run: pip install pyinstaller
+        run: pip install pyinstaller Pillow
 
       - name: Build ${{ matrix.artifact }}
         working-directory: truncate-python
