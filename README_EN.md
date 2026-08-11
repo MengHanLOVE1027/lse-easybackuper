@@ -15,6 +15,8 @@ Powered by LeviLamina.<br>
 
 [![Github Version](https://img.shields.io/github/v/release/MengHanLOVE1027/lse-easybackuper)](https://github.com/MengHanLOVE1027/lse-easybackuper/releases) [![GitHub License](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://opensource.org/licenses/AGPL-3.0) [![LSE Version](https://img.shields.io/badge/LSE-0.10.2+-yellow.svg)](https://github.com/LeviLamina/LeviLamina) [![Platform](https://img.shields.io/badge/Platform-LeviLamina-9cf.svg)](https://levimc.org/) [![Downloads](https://img.shields.io/github/downloads/MengHanLOVE1027/lse-easybackuper/total.svg)](https://github.com/MengHanLOVE1027/lse-easybackuper/releases)
 
+![](https://img.shields.io/github/v/release/MengHanLOVE1027/lse-easybackuper?style=flat-square&logo=github&color=orange&label=Version) ![](https://img.shields.io/github/downloads/MengHanLOVE1027/lse-easybackuper/total?style=flat-square&logo=github&color=33ccff&label=Downloads) ![](https://img.shields.io/github/languages/top/MengHanLOVE1027/lse-easybackuper?style=flat-square&logo=javascript&color=yellow) ![](https://img.shields.io/github/stars/MengHanLOVE1027/lse-easybackuper?style=flat-square&logo=github&color=yellow&label=Stars) ![](https://img.shields.io/github/last-commit/MengHanLOVE1027/lse-easybackuper?style=flat-square&color=lightgrey) ![](https://komarev.com/ghpvc/?username=MengHanLOVE1027&repo=lse-easybackuper&color=green&style=flat-square&label=Views)
+
 </div>
 
 ---
