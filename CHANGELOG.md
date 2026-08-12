@@ -4,6 +4,30 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
+## [0.4.8] - 2026-08-12
+
+### ✨ 新增 · Added
+- i18n 国际化支持（zh_CN / en_US），通过配置文件 `Language` 字段切换语言
+- 配置文件和语言文件版本迁移系统：插件升级时自动合并新配置项和翻译键，保留用户自定义内容
+- 语言文件存储于 `plugins/EasyBackuper/langs/` 目录，JS 内置默认值作为初始化和回退
+- 截取工具 `mhlove-truncate` 改由 Rust 重写，体积更小、性能更高，支持中英文环境自动检测
+
+### 🔧 修复 · Fixed
+- 修复版本号配置，确保版本正确显示
+- 更新 `update_versions.json` 中各版本的 `download_url` 为 Release 下载链接
+- 修复 `initI18n()` 和日志模块使用 `new File()` 创建目录导致 `Fail to Open File` 的问题
+- 修复 Rust 截取工具对备份文件无写权限导致 `os error 5` 的问题
+
+### 🏗️ 构建 · Build
+- 添加 CI 工作流（Lint & Build Check）
+- 优化 PR 生成内容和 Release 说明，支持从 CHANGELOG.md 提取分类总结
+- CI/CD 工作流适配 Rust 编译，替换 Python/PyInstaller 构建步骤
+
+### 📝 文档 · Docs
+- 更新 README 和 README_EN，添加版本和下载统计徽章
+
+---
+
 ## [0.4.8-beta.3] - 2026-08-12
 
 ### ✨ 新增 · Added
@@ -197,6 +221,7 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
+[0.4.8]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.7...v0.4.8
 [0.4.8-beta.3]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.8-beta.2...v0.4.8-beta.3
 [0.4.8-beta.2]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.8-beta.1...v0.4.8-beta.2
 [0.4.8-beta.1]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.7...v0.4.8-beta.1
