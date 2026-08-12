@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.8-beta.2",
+    plugin_version = "0.4.8-beta.3",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
@@ -539,9 +539,7 @@ function pluginPrint(text, level = "INFO") {
     try {
         const log_dir = `./logs/${plugin_name}/`
         if (!File.exists(log_dir)) {
-            // 创建目录文件对象
-            const dir_file = new File(log_dir, File.WriteMode)
-            dir_file.close()
+            File.mkdir(log_dir);
         }
         const now = new Date()
         // 格式化时间为: 2026-02-03 10:00:12,040
@@ -931,7 +929,7 @@ function migrateLangFiles() {
 function initI18n() {
     // 确保 langs 目录存在
     if (!File.exists(LANGS_DIR)) {
-        new File(LANGS_DIR, File.WriteMode).close();
+        File.mkdir(LANGS_DIR);
     }
 
     // 迁移语言文件：合并新版本中新增的翻译键

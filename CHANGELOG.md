@@ -4,6 +4,20 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
+## [0.4.8-beta.3] - 2026-08-12
+
+### ✨ 新增 · Added
+- 截取工具 `mhlove-truncate` 改由 Rust 重写，体积更小、性能更高，支持中英文环境自动检测
+
+### 🔧 修复 · Fixed
+- 修复 `initI18n()` 和日志模块使用 `new File()` 创建目录导致 `Fail to Open File` 的问题
+- 修复 Rust 截取工具对备份文件无写权限导致 `os error 5` 的问题
+
+### 🏗️ 构建 · Build
+- CI/CD 工作流适配 Rust 编译，替换 Python/PyInstaller 构建步骤
+
+---
+
 ## [0.4.8-beta.2] - 2026-08-12
 
 ### ✨ 新增 · Added
@@ -183,6 +197,7 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
+[0.4.8-beta.3]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.8-beta.2...v0.4.8-beta.3
 [0.4.8-beta.2]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.8-beta.1...v0.4.8-beta.2
 [0.4.8-beta.1]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.7...v0.4.8-beta.1
 [0.4.7]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.6...v0.4.7
