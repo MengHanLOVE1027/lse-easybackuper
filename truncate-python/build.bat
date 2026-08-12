@@ -1,1 +1,0 @@
-pyinstaller -F -c -i .\梦涵LOVE.ico -n mhlove-truncate main.py

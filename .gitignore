@@ -2,8 +2,11 @@
 build/
 config/
 i18n/
+langs/
 dist/
 .vscode
 
 *.zip
 mhlove-truncate.exe
+# Rust build output
+truncate-rust/target/

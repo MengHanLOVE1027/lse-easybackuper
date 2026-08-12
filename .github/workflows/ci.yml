@@ -62,6 +62,17 @@ jobs:
           node --check EasyBackuper.js
           echo "✅ EasyBackuper.js syntax OK"
 
+      # ── Rust 编译检查 ──
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Check Rust build (truncate)
+        working-directory: truncate-rust
+        shell: bash
+        run: |
+          cargo build --release
+          echo "✅ mhlove-truncate (Rust) built successfully"
+
       # ── 必需文件检查 ──
       - name: Verify required files
         shell: bash
@@ -95,6 +106,7 @@ jobs:
           cp EasyBackuper.js   "${PACKAGE_DIR}/"
           cp manifest.json     "${PACKAGE_DIR}/"
           cp 7za.exe           "${PACKAGE_DIR}/"
+          cp truncate-rust/target/release/mhlove-truncate.exe "${PACKAGE_DIR}/" 2>/dev/null || echo "(truncate binary not built — skipping)"
 
           zip -r "${ZIP_NAME}" "${PACKAGE_DIR}"
 

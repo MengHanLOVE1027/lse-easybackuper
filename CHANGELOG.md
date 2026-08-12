@@ -4,6 +4,13 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
+## [0.4.8-beta.2] - 2026-08-12
+
+### ✨ 新增 · Added
+- 配置文件和语言文件版本迁移系统：插件升级时自动合并新配置项和翻译键，保留用户自定义内容
+
+---
+
 ## [0.4.8-beta.1] - 2026-08-12
 
 ### ✨ 新增 · Added
@@ -176,6 +183,8 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
+[0.4.8-beta.2]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.8-beta.1...v0.4.8-beta.2
+[0.4.8-beta.1]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.7...v0.4.8-beta.1
 [0.4.7]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.5...v0.4.6
 [0.4.6-beta.5]: https://github.com/MengHanLOVE1027/lse-easybackuper/compare/v0.4.6-beta.4...v0.4.6-beta.5
