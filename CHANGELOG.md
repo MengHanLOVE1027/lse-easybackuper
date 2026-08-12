@@ -4,6 +4,13 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
+## [0.4.8] - 2026-08-12
+
+### ✨ 新增 · Added
+- i18n 国际化支持（zh_CN / en_US），通过配置文件 `Language` 字段切换语言
+
+---
+
 ## [0.4.7] - 2026-08-09
 
 ### 🔧 修复 · Fixed

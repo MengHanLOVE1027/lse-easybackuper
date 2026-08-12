@@ -192,7 +192,7 @@ class BStatsImpl {
 
     submit() {
         if (!this.enabled) {
-            bstatsRandomGradientLog("遥测模块已禁用，跳过上报。");
+            bstatsRandomGradientLog(tr("bstats.disabled"));
             return;
         }
         const payload = this.collectData();
@@ -203,9 +203,9 @@ class BStatsImpl {
         try {
             network.httpPost(this.baseUrl, JSON.stringify(payload), "application/json", (status, result) => {
                 if (status === 200) {
-                    bstatsRandomGradientLog("遥测数据上报成功。");
+                    bstatsRandomGradientLog(tr("bstats.report_success"));
                 } else {
-                    logger.warn(`上报失败，状态码: ${status}, 返回结果: ${result}`);
+                    logger.warn(tr("bstats.report_failed", status, result));
                 }
             });
         } catch (e) {
@@ -220,7 +220,7 @@ class BStatsImpl {
         setTimeout(() => this.submit(), 10 * 1000);
         setInterval(() => this.submit(), 30 * 60 * 1000);
         setTimeout(() => {
-            bstatsRandomGradientLog(`${this.pluginName}遥测模块已启动。首次数据将在 10 秒后发送。`);
+            bstatsRandomGradientLog(tr("bstats.startup", this.pluginName));
         }, 2000)
     }
 }
@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.7",
+    plugin_version = "0.4.8-beta.1",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
@@ -506,6 +506,285 @@ function pluginPrint(text, level = "INFO") {
 // #endregion
 // #endregion
 
+// TAG: i18n 国际化模块
+// #region i18n 国际化模块
+
+// 翻译表
+const I18N = {
+    "zh_CN": {
+        // BStats 遥测
+        "bstats.config_sync_failed": "同步BStats配置失败: %s",
+        "bstats.disabled": "遥测模块已禁用，跳过上报。",
+        "bstats.report_success": "遥测数据上报成功。",
+        "bstats.report_failed": "上报失败，状态码: %s, 返回结果: %s",
+        "bstats.startup": "%s遥测模块已启动。首次数据将在 10 秒后发送。",
+        "bstats.read_failed": "读取bstats配置文件失败: %s",
+
+        // Cron 调度
+        "cron.skip_duplicate": "Cron 跳过：同秒已触发过 (sec=%s)",
+        "cron.skip_running": "Cron 跳过：上一次备份仍在进行中",
+        "cron.auto_backup_starting": "自动备份正在启动中...",
+        "cron.started": "Cron 调度器已启动（1s 精度）",
+        "cron.stopped": "Cron 调度器已停止",
+
+        // 清理
+        "cleanup.files_in_world": "存档文件夹内的文件: ",
+        "cleanup.files_to_delete": "需要删除的存档: ",
+        "cleanup.success": "清理成功，清理了：%s",
+        "cleanup.failed": "清理失败！",
+        "cleanup.nothing": "本小姐看了一下，很干净捏~",
+        "cleanup.starting": "自动清理正在启动中...",
+
+        // 备份
+        "backup.copying_file": "操作中：%s ==> %s",
+        "backup.copy_error": "拷贝出错 %s: %s",
+        "backup.broadcast_start": "§2§l[EasyBackuper]§r§3开始备份力！",
+        "backup.copying": "拷贝中...",
+        "backup.server_not_ready": "The server is not ready to save!!!",
+        "backup.truncate_success": "截取成功",
+        "backup.truncate_failed": "截取失败",
+        "backup.compressing": "压缩中...",
+        "backup.compressing_7za_exit": "7za exit code: %s",
+        "backup.copy_success": "拷贝成功",
+        "backup.copy_failed": "拷贝出错",
+        "backup.copy_failed_broadcast": "§2§l[EasyBackuper]§r§c拷贝失败！",
+        "backup.copy_success_broadcast": "§2§l[EasyBackuper]§r§6拷贝成功！",
+        "backup.success": "备份成功！压缩包位于：%s (%s MB)",
+        "backup.success_broadcast": "§2§l[EasyBackuper]§r§6备份成功！§e备份存档：",
+        "backup.failed_broadcast": "§2§l[EasyBackuper]§r§c备份失败！",
+        "backup.compress_error": "压缩出错",
+        "backup.get_size_failed": "获取压缩包大小失败: %s",
+
+        // 回档
+        "restore.no_backups": "没有找到可用的备份文件",
+        "restore.list_header": "===== 可用备份列表 =====",
+        "restore.list_item": "[%d] %s (%s)",
+        "restore.failed": "回档失败: %s",
+        "restore.start_with_index": "开始回档操作，索引: %s",
+        "restore.rejected_backup_running": "回档操作被拒绝: 正在备份中",
+        "restore.wait_backup": "正在备份中，请等待备份完成后再回档！",
+        "restore.rejected_restore_running": "回档操作被拒绝: 正在回档中",
+        "restore.wait_restore": "正在回档中，请等待当前回档完成！",
+        "restore.processing": "开始处理回档请求...",
+        "restore.world_not_found": "存档文件夹不存在: %s",
+        "restore.scanning": "正在扫描备份文件夹: %s",
+        "restore.found_count": "找到 %s 个备份文件",
+        "restore.invalid_index_range": "无效的备份索引: %s，可用范围: 1-%s",
+        "restore.invalid_index": "无效的备份索引: %s",
+        "restore.backup_current": "回档前备份当前的世界...",
+        "restore.backup_done": "备份完成: %s",
+        "restore.backup_failed_cancel": "备份失败，取消回档操作",
+        "restore.selected_file": "选择的备份文件: %s",
+        "restore.selected_path": "备份文件完整路径: %s",
+        "restore.extracting": "开始解压备份文件...",
+        "restore.extract_cmd": "解压命令: %s %s",
+        "restore.extract_success": "备份文件解压成功",
+        "restore.marker_created": "回档标记文件已创建",
+        "restore.complete_msg": "备份文件 %s 已解压完成，请关闭服务器。重新启动服务器后将自动完成回档操作。",
+        "restore.close_server": "请关闭服务器。重新启动服务器后将自动完成回档操作。",
+        "restore.extract_failed": "备份文件解压失败，退出代码: %s",
+        "restore.extract_output": "输出: %s",
+        "restore.deleting_world": "正在删除原世界文件夹: %s",
+        "restore.world_deleted": "原世界文件夹已删除",
+        "restore.moving_world": "正在移动世界文件夹: %s -> %s",
+        "restore.world_moved": "世界文件夹已移动",
+        "restore.temp_deleted": "临时文件夹已删除",
+        "restore.done": "回档操作完成",
+        "restore.marker_detected": "检测到回档标记文件，开始执行回档操作...",
+        "restore.marker_deleted": "回档标记文件已删除",
+        "restore.list_error": "listBackups 错误: %s",
+        "restore.continue_error": "continueRestore 错误: %s",
+
+        // 命令
+        "cmd.backup_desc": "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
+        "cmd.restore_desc": "回档备份",
+        "cmd.reloading": "重载中...",
+        "cmd.config_reloaded": "配置文件：已重载",
+        "cmd.auto_backup_status": "自动备份状态：",
+        "cmd.auto_clean_status": "自动清理状态：",
+        "cmd.debug_console": "Debug更多日志状态(控制台)：",
+        "cmd.debug_player": "Debug更多日志状态(玩家)：",
+        "cmd.debug_cron": "Debug更多日志状态(Cron)：",
+        "cmd.init_success": "初始化文件成功",
+        "cmd.permission_denied": "§c[EasyBackuper] §f您没有权限执行此操作！",
+        "cmd.restore_help": "回档命令帮助:\n/restore - 显示此帮助信息\n/restore list <数量> - 列出指定数量的备份\n/restore <索引> - 回档到指定索引的备份",
+
+        // 插件加载
+        "plugin.author_version": "作者：梦涵LOVE | 版本：v%s",
+        "plugin.thanks": "感谢您使用Easy系列插件！",
+        "plugin.license_info": "本插件使用 %s 许可证协议发布",
+        "plugin.github": "GitHub 仓库：%s",
+        "plugin.minebbs": "插件MineBBS资源帖：%s",
+        "plugin.qq_group": "Easy系列插件交流群：1083195477",
+        "plugin.bstats_status": "BStats状态：",
+        "plugin.update_hint": "请安装 EasyCheckUpdate 插件以为本插件提供更新检查功能",
+        "plugin.unloading": "插件卸载中...",
+        "plugin.unloaded": "插件卸载完成",
+        "plugin.bstats_init_failed": "BStats初始化失败: %s",
+
+        // 通用状态
+        "status.enabled": "已启用",
+        "status.disabled": "已禁用",
+
+        // 内部
+        "log.write_failed": "写入日志文件失败: %s",
+    },
+
+    "en_US": {
+        // BStats
+        "bstats.config_sync_failed": "Failed to sync BStats config: %s",
+        "bstats.disabled": "Telemetry module disabled, skipping report.",
+        "bstats.report_success": "Telemetry data reported successfully.",
+        "bstats.report_failed": "Report failed, status: %s, response: %s",
+        "bstats.startup": "%s telemetry module started. First data will be sent in 10 seconds.",
+        "bstats.read_failed": "Failed to read bstats config: %s",
+
+        // Cron
+        "cron.skip_duplicate": "Cron skip: already triggered this second (sec=%s)",
+        "cron.skip_running": "Cron skip: previous backup still in progress",
+        "cron.auto_backup_starting": "Auto-backup starting...",
+        "cron.started": "Cron scheduler started (1s precision)",
+        "cron.stopped": "Cron scheduler stopped",
+
+        // Cleanup
+        "cleanup.files_in_world": "Files in world folder: ",
+        "cleanup.files_to_delete": "Files to delete: ",
+        "cleanup.success": "Cleanup successful, removed: %s",
+        "cleanup.failed": "Cleanup failed!",
+        "cleanup.nothing": "All clean, nothing to remove~",
+        "cleanup.starting": "Auto-cleanup starting...",
+
+        // Backup
+        "backup.copying_file": "Copying: %s ==> %s",
+        "backup.copy_error": "Copy error %s: %s",
+        "backup.broadcast_start": "§2§l[EasyBackuper]§r§3Starting backup!",
+        "backup.copying": "Copying...",
+        "backup.server_not_ready": "The server is not ready to save!!!",
+        "backup.truncate_success": "Truncate successful",
+        "backup.truncate_failed": "Truncate failed",
+        "backup.compressing": "Compressing...",
+        "backup.compressing_7za_exit": "7za exit code: %s",
+        "backup.copy_success": "Copy successful",
+        "backup.copy_failed": "Copy failed",
+        "backup.copy_failed_broadcast": "§2§l[EasyBackuper]§r§cCopy failed!",
+        "backup.copy_success_broadcast": "§2§l[EasyBackuper]§r§6Copy successful!",
+        "backup.success": "Backup successful! Archive: %s (%s MB)",
+        "backup.success_broadcast": "§2§l[EasyBackuper]§r§6Backup successful! §eArchive: ",
+        "backup.failed_broadcast": "§2§l[EasyBackuper]§r§cBackup failed!",
+        "backup.compress_error": "Compression error",
+        "backup.get_size_failed": "Failed to get archive size: %s",
+
+        // Restore
+        "restore.no_backups": "No backup files found",
+        "restore.list_header": "===== Available Backups =====",
+        "restore.list_item": "[%d] %s (%s)",
+        "restore.failed": "Restore failed: %s",
+        "restore.start_with_index": "Starting restore, index: %s",
+        "restore.rejected_backup_running": "Restore rejected: backup in progress",
+        "restore.wait_backup": "Backup in progress, please wait and try again!",
+        "restore.rejected_restore_running": "Restore rejected: another restore in progress",
+        "restore.wait_restore": "Restore in progress, please wait for it to complete!",
+        "restore.processing": "Processing restore request...",
+        "restore.world_not_found": "World folder not found: %s",
+        "restore.scanning": "Scanning backup folder: %s",
+        "restore.found_count": "Found %s backup file(s)",
+        "restore.invalid_index_range": "Invalid backup index: %s, valid range: 1-%s",
+        "restore.invalid_index": "Invalid backup index: %s",
+        "restore.backup_current": "Backing up current world before restore...",
+        "restore.backup_done": "Backup complete: %s",
+        "restore.backup_failed_cancel": "Backup failed, restore cancelled",
+        "restore.selected_file": "Selected backup file: %s",
+        "restore.selected_path": "Backup file path: %s",
+        "restore.extracting": "Extracting backup file...",
+        "restore.extract_cmd": "Extract command: %s %s",
+        "restore.extract_success": "Backup file extracted successfully",
+        "restore.marker_created": "Restore marker file created",
+        "restore.complete_msg": "Backup file %s has been extracted. Please shut down the server. The restore will complete automatically after restart.",
+        "restore.close_server": "Please shut down the server. The restore will complete automatically after restart.",
+        "restore.extract_failed": "Extraction failed, exit code: %s",
+        "restore.extract_output": "Output: %s",
+        "restore.deleting_world": "Deleting original world folder: %s",
+        "restore.world_deleted": "Original world folder deleted",
+        "restore.moving_world": "Moving world folder: %s -> %s",
+        "restore.world_moved": "World folder moved",
+        "restore.temp_deleted": "Temporary folder deleted",
+        "restore.done": "Restore complete",
+        "restore.marker_detected": "Restore marker detected, starting restore...",
+        "restore.marker_deleted": "Restore marker file deleted",
+        "restore.list_error": "listBackups error: %s",
+        "restore.continue_error": "continueRestore error: %s",
+
+        // Commands
+        "cmd.backup_desc": "A lightweight, high-performance, and feature-rich hot backup plugin for Minecraft servers based on LSE.",
+        "cmd.restore_desc": "Restore backup",
+        "cmd.reloading": "Reloading...",
+        "cmd.config_reloaded": "Config: reloaded",
+        "cmd.auto_backup_status": "Auto-backup: ",
+        "cmd.auto_clean_status": "Auto-cleanup: ",
+        "cmd.debug_console": "Debug logs (console): ",
+        "cmd.debug_player": "Debug logs (player): ",
+        "cmd.debug_cron": "Debug logs (cron): ",
+        "cmd.init_success": "Config initialized successfully",
+        "cmd.permission_denied": "§c[EasyBackuper] §fYou do not have permission to do this!",
+        "cmd.restore_help": "Restore command help:\n/restore - Show this help\n/restore list <count> - List specified number of backups\n/restore <index> - Restore to the specified backup index",
+
+        // Plugin
+        "plugin.author_version": "Author: MengHanLOVE | Version: v%s",
+        "plugin.thanks": "Thank you for using EasyBackuper!",
+        "plugin.license_info": "Licensed under %s",
+        "plugin.github": "GitHub: %s",
+        "plugin.minebbs": "MineBBS: %s",
+        "plugin.qq_group": "QQ Group: 1083195477",
+        "plugin.bstats_status": "BStats: ",
+        "plugin.update_hint": "Install EasyCheckUpdate plugin to enable update checks",
+        "plugin.unloading": "Unloading plugin...",
+        "plugin.unloaded": "Plugin unloaded",
+        "plugin.bstats_init_failed": "BStats init failed: %s",
+
+        // Status
+        "status.enabled": "Enabled",
+        "status.disabled": "Disabled",
+
+        // Internal
+        "log.write_failed": "Failed to write log file: %s",
+    }
+};
+
+// 当前使用的语言
+let i18nLang = "zh_CN";
+
+/**
+ * 翻译函数
+ * @param {string} key - 翻译键
+ * @param {...any} args - 替换 %s/%d 占位符的参数
+ * @returns {string} 翻译后的文本
+ */
+function tr(key, ...args) {
+    const langData = I18N[i18nLang];
+    let text = langData ? langData[key] : undefined;
+    if (text === undefined) {
+        // 回退到 zh_CN
+        text = I18N["zh_CN"][key];
+    }
+    if (text === undefined) {
+        // 最终回退：显示 key 本身
+        return key;
+    }
+    if (args.length > 0) {
+        return formatString(text, ...args);
+    }
+    return text;
+}
+
+/** 初始化 i18n 语言设置 */
+function initI18n() {
+    i18nLang = pluginConfig.get("Language") || "zh_CN";
+    if (!I18N[i18nLang]) {
+        i18nLang = "zh_CN";
+    }
+}
+// #endregion
+
 // TAG: Cron解析模块
 // #region Cron解析模块
 /**
@@ -623,7 +902,7 @@ function onCronTrigger() {
     // 守卫1：同秒内只触发一次
     if (triggerKey === lastCronTriggerSecond) {
         if (Debug_Morelogs_Cron) {
-            pluginPrint(`Cron 跳过：同秒已触发过 (sec=${triggerKey})`, "DEBUG")
+            pluginPrint(tr("cron.skip_duplicate", triggerKey), "DEBUG")
         }
         return
     }
@@ -631,7 +910,7 @@ function onCronTrigger() {
     // 守卫2：上次备份还没结束，跳过
     if (is_backing_up) {
         if (Debug_Morelogs_Cron) {
-            pluginPrint("Cron 跳过：上一次备份仍在进行中", "DEBUG")
+            pluginPrint(tr("cron.skip_running"), "DEBUG")
         }
         return
     }
@@ -643,7 +922,7 @@ function onCronTrigger() {
         pluginPrint(`Current time: ${now.toDateString()} ${now.toTimeString()}`, "DEBUG")
     }
 
-    pluginPrint("自动备份正在启动中...", "INFO")
+    pluginPrint(tr("cron.auto_backup_starting"), "INFO")
     Start()
 }
 
@@ -654,7 +933,7 @@ function startCronScheduler() {
     if (cronTimerHandle) return  // 已经在运行
 
     if (Debug_Morelogs_Cron) {
-        pluginPrint("Cron 调度器已启动（1s 精度）", "DEBUG")
+        pluginPrint(tr("cron.started"), "DEBUG")
     }
 
     cronTimerHandle = setInterval(() => {
@@ -672,7 +951,7 @@ function stopCronScheduler() {
         clearInterval(cronTimerHandle)
         cronTimerHandle = null
         if (Debug_Morelogs_Cron) {
-            pluginPrint("Cron 调度器已停止", "DEBUG")
+            pluginPrint(tr("cron.stopped"), "DEBUG")
         }
     }
 }
@@ -715,7 +994,7 @@ function deleteOldBackups(backupDir, maxBackups) {
 
     // 调试信息(在配置文件中Debug_MoreLogs开启)
     if (Debug_Morelogs) {
-        pluginPrint('存档文件夹内的文件: ', "DEBUG")
+        pluginPrint(tr("cleanup.files_in_world"), "DEBUG")
     }
     // 调试信息(在配置文件中Debug_MoreLogs_Player开启)
     if (Debug_Morelogs_Player) {
@@ -749,7 +1028,7 @@ function deleteOldBackups(backupDir, maxBackups) {
 
         // 调试信息(在配置文件中Debug_MoreLogs开启)
         if (Debug_Morelogs) {
-            pluginPrint('需要删除的存档: ', "DEBUG")
+            pluginPrint(tr("cleanup.files_to_delete"), "DEBUG")
         }
         // 调试信息(在配置文件中Debug_MoreLogs_Player开启)
         if (Debug_Morelogs_Player) {
@@ -779,14 +1058,14 @@ function deleteOldBackups(backupDir, maxBackups) {
         // 对返回值进行判断是否成功运行
         if (err_out) {
             for (let i = 0; i < ending.length; i++) {
-                pluginPrint("清理成功，清理了：" + ending[i], "INFO")
+                pluginPrint(tr("cleanup.success", ending[i]), "INFO")
             }
         } else {
             // 当备份文件夹文件小于等于用户设置最大保留值时
-            pluginPrint("清理失败！", "ERROR")
+            pluginPrint(tr("cleanup.failed"), "ERROR")
         }
     } else {
-        pluginPrint("本小姐看了一下，很干净捏~", "INFO")
+        pluginPrint(tr("cleanup.nothing"), "INFO")
     }
 }
 // #endregion
@@ -810,7 +1089,7 @@ function Clean_Backup_Files() {
     // 判断选择方式
     if (use_number_detection_status) {
         // 调用函数，例如删除除了最新的5个文件外的所有文件
-        pluginPrint("自动清理正在启动中...", "WARNING")
+        pluginPrint(tr("cleanup.starting"), "WARNING")
         deleteOldBackups(pluginConfig.get('BackupFolderPath'), use_number_detection_max_number)
     }
 }
@@ -906,13 +1185,13 @@ function copyFile(src_path, dst_path) {
     return new Promise((resolve, reject) => {
         try {
             if (Debug_Morelogs) {
-                pluginPrint("操作中：" + `${src_path} ==> ${dst_path}`, "DEBUG")
+                pluginPrint(tr("backup.copying_file", src_path, dst_path), "DEBUG")
             }
             // 如果是文件，则复制文件
             File.copy(src_path, dst_path)
             resolve(true)
         } catch (e) {
-            pluginPrint("拷贝出错" + ` ${src_path}: ${str(e)}`, "ERROR")
+            pluginPrint(tr("backup.copy_error", src_path, String(e)), "ERROR")
             reject(e)
         }
     })
@@ -984,7 +1263,7 @@ function copyDirectoryMultithread(src, dest) {
                         setTimeout(processBatch, 0)
                     })
                     .catch(e => {
-                        pluginPrint("拷贝出错" + `: ${str(e)}`, "ERROR")
+                        pluginPrint(tr("backup.copy_error", "", String(e)), "ERROR")
                         reject(e)
                     })
             }
@@ -992,7 +1271,7 @@ function copyDirectoryMultithread(src, dest) {
             // 开始处理第一批
             processBatch()
         } catch (e) {
-            pluginPrint("拷贝出错" + `: ${str(e)}`, "ERROR")
+            pluginPrint(tr("backup.copy_error", "", String(e)), "ERROR")
             reject(e)
         }
     })
@@ -1022,7 +1301,7 @@ function copyDirectory(src, dest, pl) {
         } else {
             // 调试信息(在配置文件中Debug_MoreLogs开启)
             if (Debug_Morelogs) {
-                pluginPrint("操作中：" + `${srcPath} ==> ${destPath}`, "DEBUG")
+                pluginPrint(tr("backup.copying_file", srcPath, destPath), "DEBUG")
             }
             // 调试信息(在配置文件中Debug_MoreLogs_Player开启)
             if (Debug_Morelogs_Player) {
@@ -1070,16 +1349,16 @@ function Backup(pl, callback) {
     // 如果开启广播功能则进行广播
     if (broadcast_status) {
         // type可选数字: 0-普通消息(Raw), 1-聊天消息(Chat) 5-物品栏上方的消息(Tip)
-        mc.broadcast("§2§l[EasyBackuper]§r§3开始备份力！", 0)
-        mc.broadcast("§2§l[EasyBackuper]§r§3开始备份力！", 5)
+        mc.broadcast(tr("backup.broadcast_start"), 0)
+        mc.broadcast(tr("backup.broadcast_start"), 5)
     }
 
     // NOTE: 暂停存档写入
     mc.runcmd("save hold")
-    pluginPrint("拷贝中...", "INFO") // 提示信息
+    pluginPrint(tr("backup.copying"), "INFO") // 提示信息
     // 提醒使用该指令玩家
     if (yes_no_console == 0) {
-        pl.tell("拷贝中...")
+        pl.tell(tr("backup.copying"))
     }
 
     // TAG: save query模块
@@ -1095,7 +1374,7 @@ function Backup(pl, callback) {
         let ready = return_value.success
 
         if (!ready) {
-            pluginPrint('The server is not ready to save!!!', "ERROR")
+            pluginPrint(tr("backup.server_not_ready"), "ERROR")
             mc.runcmd("save resume")
             return false
         }
@@ -1120,7 +1399,7 @@ function Backup(pl, callback) {
             // 调试信息(在配置文件中Debug_MoreLogs开启)
             if (Debug_Morelogs) {
                 // logger.log('[Debug] ' + "操作中：" + `${world_folder_list[i]} --> ${currentPath}`)
-                pluginPrint("操作中：" + `${world_folder_list[i]} --> ${currentPath}`, "DEBUG")
+                pluginPrint(tr("backup.copying_file", world_folder_list[i], currentPath), "DEBUG")
             }
             // 调试信息(在配置文件中Debug_MoreLogs_Player开启)
             if (Debug_Morelogs_Player) {
@@ -1166,11 +1445,11 @@ function Backup(pl, callback) {
         system.newProcess(`cmd /c ${pluginConfig.get("exe_mhlove_truncate_path")} "./file_paths_tmp.json" "${backup_tmp_path}"`, (exitcode, output) => {
             if (exitcode === 0) {
                 pluginPrint(`\n${output}`, "DEBUG")
-                pluginPrint("截取成功", "SUCCESS")
+                pluginPrint(tr("backup.truncate_success"), "SUCCESS")
                 File.delete("./file_paths_tmp.json")
             } else {
                 pluginPrint(`\n${output}`, "DEBUG")
-                pluginPrint("截取失败", "ERROR")
+                pluginPrint(tr("backup.truncate_failed"), "ERROR")
                 File.delete("./file_paths_tmp.json")
             }
         })
@@ -1211,15 +1490,15 @@ function Backup(pl, callback) {
                 backup_tmp = backup_tmp.slice(0, -1)
             }
             system.newProcess(pluginConfig.get("exe_7z_path") + ' a -tzip ' + '"' + backup_folder + `/${archive_name}` + '"' + ` ${backup_tmp}/*`, (exit, out) => {
-                pluginPrint("压缩中...", "INFO") // 提示信息
+                pluginPrint(tr("backup.compressing"), "INFO") // 提示信息
 
                 // 提醒使用该指令玩家
                 if (yes_no_console == 0) {
-                    pl.tell("压缩中...")
+                    pl.tell(tr("backup.compressing"))
                 }
 
                 // 将7za的输出写入日志文件
-                pluginPrint(`7za exit code: ${exit}`, "INFO")
+                pluginPrint(tr("backup.compressing_7za_exit", exit), "INFO")
                 if (out && out.trim()) {
                     pluginPrint(`7za output:\n${out}`, "INFO")
                 }
@@ -1243,33 +1522,33 @@ function Backup(pl, callback) {
         // #region 检查是否拷贝成功
         let check_copy = setInterval(() => {
             if (copy_return) { // 感觉没必要判断复制成功或失败，一般情况都是可以复制成功的
-                pluginPrint("拷贝成功", "SUCCESS")
+                pluginPrint(tr("backup.copy_success"), "SUCCESS")
 
                 // 全体广播备份情况
                 // type可选数字: 0-普通消息(Raw), 1-聊天消息(Chat) 5-物品栏上方的消息(Tip)
                 if (broadcast_status) {
-                    mc.broadcast("§2§l[EasyBackuper]§r§6拷贝成功！", 0)
-                    mc.broadcast("§2§l[EasyBackuper]§r§6拷贝成功！", 5)
+                    mc.broadcast(tr("backup.copy_success_broadcast"), 0)
+                    mc.broadcast(tr("backup.copy_success_broadcast"), 5)
                 }
                 // 提醒使用该指令玩家
                 if (yes_no_console == 0) {
-                    pl.tell("拷贝成功")
+                    pl.tell(tr("backup.copy_success"))
                 }
 
                 mc.runcmd("save resume") // 恢复存档写入
                 clearInterval(check_copy) // 退出循环函数
             } else {
-                pluginPrint("拷贝出错", "ERROR")
+                pluginPrint(tr("backup.copy_failed"), "ERROR")
 
                 // 全体广播备份情况
                 // type可选数字: 0-普通消息(Raw), 1-聊天消息(Chat) 5-物品栏上方的消息(Tip)
                 if (broadcast_status) {
-                    mc.broadcast("§2§l[EasyBackuper]§r§c拷贝失败！", 0)
-                    mc.broadcast("§2§l[EasyBackuper]§r§c拷贝失败！", 5)
+                    mc.broadcast(tr("backup.copy_failed_broadcast"), 0)
+                    mc.broadcast(tr("backup.copy_failed_broadcast"), 5)
                 }
                 // 提醒使用该指令玩家
                 if (yes_no_console == 0) {
-                    pl.tell("拷贝出错")
+                    pl.tell(tr("backup.copy_failed"))
                 }
 
                 mc.runcmd("save resume") // 恢复存档写入
@@ -1297,20 +1576,20 @@ function Backup(pl, callback) {
                     file_obj.close()
                     let archiveSizeMB = (archiveSize / (1024 * 1024)).toFixed(2) // 转换为MB并保留两位小数
 
-                    pluginPrint("备份成功！压缩包位于：" + archivePath + ` (${archiveSizeMB} MB)`, "SUCCESS")
+                    pluginPrint(tr("backup.success", archivePath, archiveSizeMB), "SUCCESS")
 
                     // 全体广播备份情况
                     // type可选数字: 0-普通消息(Raw), 1-聊天消息(Chat) 5-物品栏上方的消息(Tip)
                     if (broadcast_status) {
-                        mc.broadcast("§2§l[EasyBackuper]§r§6备份成功！§e备份存档：" + `${archive_name} (${archiveSizeMB} MB)`, 0)
-                        mc.broadcast("§2§l[EasyBackuper]§r§6备份成功！§e备份存档：" + `${archive_name} (${archiveSizeMB} MB)`, 5)
+                        mc.broadcast(tr("backup.success_broadcast") + archive_name + " (" + archiveSizeMB + " MB)", 0)
+                        mc.broadcast(tr("backup.success_broadcast") + archive_name + " (" + archiveSizeMB + " MB)", 5)
 
                         // 通知全体玩家(类似于成就获得提示)
                         Notice_Upper(broadcast_Backup_success_Title, broadcast_Backup_success_Message)
                     }
                     // 提醒使用该指令玩家
                     if (yes_no_console == 0) {
-                        pl.tell("备份成功！压缩包位于：" + archivePath + ` (${archiveSizeMB} MB)`)
+                        pl.tell(tr("backup.success", archivePath, archiveSizeMB))
                     }
                     File.delete(backup_tmp_path)
 
@@ -1340,21 +1619,21 @@ function Backup(pl, callback) {
                         callback(true, archivePath)
                     }
                 } catch (e) {
-                    pluginPrint(`获取压缩包大小失败: ${e}`, "ERROR")
-                    pluginPrint("压缩出错", "ERROR")
+                    pluginPrint(tr("backup.get_size_failed", String(e)), "ERROR")
+                    pluginPrint(tr("backup.compress_error"), "ERROR")
 
                     // 全体广播备份情况
                     // type可选数字: 0-普通消息(Raw), 1-聊天消息(Chat) 5-物品栏上方的消息(Tip)
                     if (broadcast_status) {
-                        mc.broadcast("§2§l[EasyBackuper]§r§c备份失败！", 0)
-                        mc.broadcast("§2§l[EasyBackuper]§r§c备份失败！", 5)
+                        mc.broadcast(tr("backup.failed_broadcast"), 0)
+                        mc.broadcast(tr("backup.failed_broadcast"), 5)
 
                         // 通知全体玩家(类似于成就获得提示)
                         Notice_Upper(broadcast_Backup_wrong_Title, broadcast_Backup_wrong_Message)
                     }
                     // 提醒使用该指令玩家
                     if (yes_no_console == 0) {
-                        pl.tell("压缩出错")
+                        pl.tell(tr("backup.compress_error"))
                     }
 
                     File.delete(backup_tmp_path)
@@ -1367,20 +1646,20 @@ function Backup(pl, callback) {
                     }
                 }
             } else if (compress_return == 1) {
-                pluginPrint("压缩出错", "ERROR")
+                pluginPrint(tr("backup.compress_error"), "ERROR")
 
                 // 全体广播备份情况
                 // type可选数字: 0-普通消息(Raw), 1-聊天消息(Chat) 5-物品栏上方的消息(Tip)
                 if (broadcast_status) {
-                    mc.broadcast("§2§l[EasyBackuper]§r§c备份失败！", 0)
-                    mc.broadcast("§2§l[EasyBackuper]§r§c备份失败！", 5)
+                    mc.broadcast(tr("backup.failed_broadcast"), 0)
+                    mc.broadcast(tr("backup.failed_broadcast"), 5)
 
                     // 通知全体玩家(类似于成就获得提示)
                     Notice_Upper(broadcast_Backup_wrong_Title, broadcast_Backup_wrong_Message)
                 }
                 // 提醒使用该指令玩家
                 if (yes_no_console == 0) {
-                    pl.tell("压缩出错")
+                    pl.tell(tr("backup.compress_error"))
                 }
 
                 File.delete(backup_tmp_path)
@@ -1415,8 +1694,8 @@ function listBackups(origin, limit = 10) {
     try {
         const backup_folder = pluginConfig.get("BackupFolderPath")
         if (!File.exists(backup_folder)) {
-            const msg = `§c[EasyBackuper] §f没有找到可用的备份文件`
-            pluginPrint("没有找到可用的备份文件", "WARNING")
+            const msg = `§c[EasyBackuper] §f` + tr("restore.no_backups")
+            pluginPrint(tr("restore.no_backups"), "WARNING")
             if (origin.typeName == "Player") {
                 pl = mc.getPlayer(origin.player.realName)
                 pl.tell(msg)
@@ -1476,8 +1755,8 @@ function listBackups(origin, limit = 10) {
         backup_files = backup_files.slice(0, limit)
 
         if (backup_files.length === 0) {
-            const msg = `§c[EasyBackuper] §f没有找到可用的备份文件`
-            pluginPrint("没有找到可用的备份文件", "WARNING")
+            const msg = `§c[EasyBackuper] §f` + tr("restore.no_backups")
+            pluginPrint(tr("restore.no_backups"), "WARNING")
             if (origin.typeName == "Player") {
                 pl = mc.getPlayer(origin.player.realName)
                 pl.tell(msg)
@@ -1486,36 +1765,36 @@ function listBackups(origin, limit = 10) {
         }
 
         // 发送备份列表
-        const header = `§a[EasyBackuper] §f===== 可用备份列表 =====`
+        const header = `§a[EasyBackuper] §f` + tr("restore.list_header")
         if (origin.typeName == "Player") {
             pl = mc.getPlayer(origin.player.realName)
             pl.tell(header)
             for (let i = 0; i < backup_files.length; i++) {
                 const file = backup_files[i]
                 const file_size = formatFileSize(file.size)
-                const item = `§a[EasyBackuper] §f${formatString("[%d] %s (%s)", String(i + 1), file.name, file_size)}`
+                const item = `§a[EasyBackuper] §f` + tr("restore.list_item", String(i + 1), file.name, file_size)
                 pl.tell(item)
             }
             pl.tell(`§a[EasyBackuper] §f=====================`)
         } else {
-            pluginPrint("===== 可用备份列表 =====", "INFO")
+            pluginPrint(tr("restore.list_header"), "INFO")
             for (let i = 0; i < backup_files.length; i++) {
                 const file = backup_files[i]
                 const file_size = formatFileSize(file.size)
-                const item = formatString("[%d] %s (%s)", String(i + 1), file.name, file_size)
+                const item = tr("restore.list_item", String(i + 1), file.name, file_size)
                 pluginPrint(item, "INFO")
             }
             pluginPrint("=====================", "INFO")
         }
     } catch (e) {
-        pluginPrint(`listBackups 错误: ${e}`, "ERROR")
+        pluginPrint(tr("restore.list_error", String(e)), "ERROR")
         pluginPrint(`错误堆栈: ${e.stack}`, "ERROR")
-        const msg = `§c[EasyBackuper] §f${formatString("回档失败: %s", String(e))}`
+        const msg = `§c[EasyBackuper] §f${tr("restore.failed", String(e))}`
         if (origin.typeName == "Player") {
             pl = mc.getPlayer(origin.player.realName)
             pl.tell(msg)
         }
-        pluginPrint(formatString("回档失败: %s", String(e)), "ERROR")
+        pluginPrint(tr("restore.failed", String(e)), "ERROR")
     }
 }
 
@@ -1525,7 +1804,7 @@ function listBackups(origin, limit = 10) {
  * @param {Number} restore_index 备份索引（从1开始）
  */
 function startRestore(origin, restore_index) {
-    pluginPrint(formatString("开始回档操作，索引: %s", String(restore_index)), "INFO")
+    pluginPrint(tr("restore.start_with_index", String(restore_index)), "INFO")
 
     // 保存玩家名称，避免在回调中访问origin.player
     let player_name = null;
@@ -1547,9 +1826,9 @@ function startRestore(origin, restore_index) {
 
     // 检查是否正在备份
     if (is_backing_up) {
-        pluginPrint("回档操作被拒绝: 正在备份中", "WARNING")
-        pluginPrint("正在备份中，请等待备份完成后再回档！", "WARNING")
-        const msg = `§c[EasyBackuper] §f正在备份中，请等待备份完成后再回档！`
+        pluginPrint(tr("restore.rejected_backup_running"), "WARNING")
+        pluginPrint(tr("restore.wait_backup"), "WARNING")
+        const msg = `§c[EasyBackuper] §f` + tr("restore.wait_backup")
         if (yes_no_console == 0) {
             pl = mc.getPlayer(origin.player.realName)
             pl.tell(msg)
@@ -1559,9 +1838,9 @@ function startRestore(origin, restore_index) {
 
     // 检查是否正在回档
     if (is_restoring) {
-        pluginPrint("回档操作被拒绝: 正在回档中", "WARNING")
-        pluginPrint("正在回档中，请等待当前回档完成！", "WARNING")
-        const msg = `§c[EasyBackuper] §f正在回档中，请等待当前回档完成！`
+        pluginPrint(tr("restore.rejected_restore_running"), "WARNING")
+        pluginPrint(tr("restore.wait_restore"), "WARNING")
+        const msg = `§c[EasyBackuper] §f` + tr("restore.wait_restore")
         if (yes_no_console == 0) {
             pl = mc.getPlayer(origin.player.realName)
             pl.tell(msg)
@@ -1570,7 +1849,7 @@ function startRestore(origin, restore_index) {
     }
 
     try {
-        pluginPrint("开始处理回档请求...", "INFO")
+        pluginPrint(tr("restore.processing"), "INFO")
 
         let backup_folder = pluginConfig.get("BackupFolderPath")
         // 移除路径末尾的斜杠
@@ -1579,8 +1858,8 @@ function startRestore(origin, restore_index) {
         }
 
         if (!File.exists(backup_folder)) {
-            pluginPrint(formatString("存档文件夹不存在: %s", backup_folder), "ERROR")
-            const msg = `§c[EasyBackuper] §f${formatString("存档文件夹不存在: %s", backup_folder)}`
+            pluginPrint(tr("restore.world_not_found", backup_folder), "ERROR")
+            const msg = `§c[EasyBackuper] §f` + tr("restore.world_not_found", backup_folder)
             if (yes_no_console == 0) {
                 pl = mc.getPlayer(origin.player.realName)
                 pl.tell(msg)
@@ -1589,7 +1868,7 @@ function startRestore(origin, restore_index) {
         }
 
         // 获取所有备份文件（支持多种压缩格式）
-        pluginPrint(formatString("正在扫描备份文件夹: %s", backup_folder), "INFO")
+        pluginPrint(tr("restore.scanning", backup_folder), "INFO")
         let backup_files = []
         const supported_extensions = [".zip", ".7z", ".tar.gz", ".tgz"]
 
@@ -1630,15 +1909,15 @@ function startRestore(origin, restore_index) {
             }
         }
 
-        pluginPrint(formatString("找到 %s 个备份文件", String(backup_files.length)), "INFO")
+        pluginPrint(tr("restore.found_count", String(backup_files.length)), "INFO")
 
         // 按修改时间倒序排序（最新的在前）
         backup_files.sort((a, b) => b.mtime - a.mtime)
 
         // 检查索引是否有效
         if (restore_index < 1 || restore_index > backup_files.length) {
-            pluginPrint(formatString("无效的备份索引: %s，可用范围: 1-%s", String(restore_index), String(backup_files.length)), "ERROR")
-            const msg = `§c[EasyBackuper] §f${formatString("无效的备份索引: %s", String(restore_index))}`
+            pluginPrint(tr("restore.invalid_index_range", String(restore_index), String(backup_files.length)), "ERROR")
+            const msg = `§c[EasyBackuper] §f` + tr("restore.invalid_index", String(restore_index))
             if (yes_no_console == 0) {
                 pl = mc.getPlayer(origin.player.realName)
                 pl.tell(msg)
@@ -1650,7 +1929,7 @@ function startRestore(origin, restore_index) {
         const restore_config = pluginConfig.get("Restore")
         const backup_old_world = restore_config.backup_old_world_before_restore
         if (backup_old_world) {
-            pluginPrint("回档前备份当前的世界...", "INFO")
+            pluginPrint(tr("restore.backup_current"), "INFO")
 
             // 使用回调函数来等待备份完成
             // 保存玩家对象，避免在回调中访问origin.player
@@ -1661,7 +1940,7 @@ function startRestore(origin, restore_index) {
 
             Backup(restore_player, (success, archivePath) => {
                 if (success) {
-                    pluginPrint(`备份完成: ${archivePath}`, "SUCCESS")
+                    pluginPrint(tr("restore.backup_done", archivePath), "SUCCESS")
                     // 继续回档流程，传递玩家名称而不是origin对象
                     let player_name = null;
                     if (restore_player) {
@@ -1669,8 +1948,8 @@ function startRestore(origin, restore_index) {
                     }
                     continueRestore(player_name, restore_index, backup_files)
                 } else {
-                    pluginPrint("备份失败，取消回档操作", "ERROR")
-                    const msg = `§c[EasyBackuper] §f备份失败，取消回档操作`
+                    pluginPrint(tr("restore.backup_failed_cancel"), "ERROR")
+                    const msg = `§c[EasyBackuper] §f` + tr("restore.backup_failed_cancel")
                     let player_name = null;
                     if (restore_player) {
                         player_name = restore_player.realName;
@@ -1692,8 +1971,8 @@ function startRestore(origin, restore_index) {
             continueRestore(origin, restore_index, backup_files)
         }
     } catch (e) {
-        pluginPrint(`回档操作失败: ${e}`, "ERROR")
-        const msg = `§c[EasyBackuper] §f回档操作失败: ${e}`
+        pluginPrint(tr("restore.failed", String(e)), "ERROR")
+        const msg = `§c[EasyBackuper] §f` + tr("restore.failed", String(e))
         if (yes_no_console == 0 && player_name) {
             pl = mc.getPlayer(player_name)
             if (pl) {
@@ -1714,7 +1993,7 @@ function continueRestore(player_name, restore_index, backup_files) {
     // 使用传入的玩家名称
 
     try {
-        pluginPrint("开始处理回档请求...", "INFO")
+        pluginPrint(tr("restore.processing"), "INFO")
 
         // 获取选中的备份文件
         const selected_backup = backup_files[restore_index - 1]
@@ -1722,11 +2001,11 @@ function continueRestore(player_name, restore_index, backup_files) {
         // 格式化时间
         const time_str = new Date(selected_backup.mtime).toLocaleString()
 
-        pluginPrint(formatString("选择的备份文件: %s", selected_backup.name, time_str), "INFO")
-        pluginPrint(formatString("备份文件完整路径: %s", selected_backup.path), "INFO")
+        pluginPrint(tr("restore.selected_file", selected_backup.name, time_str), "INFO")
+        pluginPrint(tr("restore.selected_path", selected_backup.path), "INFO")
 
         // 开始解压备份文件
-        pluginPrint("开始解压备份文件...", "INFO")
+        pluginPrint(tr("restore.extracting"), "INFO")
 
         // 创建临时解压目录
         const temp_restore_dir = "./temp_restore/"
@@ -1755,14 +2034,14 @@ function continueRestore(player_name, restore_index, backup_files) {
             "-y"
         ]
 
-        pluginPrint(`解压命令: ${exe_7z_path} ${extract_args.join(" ")}`, "INFO")
+        pluginPrint(tr("restore.extract_cmd", exe_7z_path, extract_args.join(" ")), "INFO")
         pluginPrint(`7za路径: ${exe_7z_path}`, "INFO")
         pluginPrint(`备份路径: ${backup_path}`, "INFO")
         pluginPrint(`解压目录: ${temp_restore_dir}`, "INFO")
 
         system.newProcess(`${exe_7z_path} ${extract_args.join(" ")}`, (exitcode, output) => {
             if (exitcode === 0) {
-                pluginPrint("备份文件解压成功", "SUCCESS")
+                pluginPrint(tr("restore.extract_success"), "SUCCESS")
 
                 // 创建回档标记文件
                 const restore_marker_file = "./temp_restore/restore_marker.json"
@@ -1775,10 +2054,10 @@ function continueRestore(player_name, restore_index, backup_files) {
                 })
 
                 File.writeTo(restore_marker_file, marker_content)
-                pluginPrint("回档标记文件已创建", "SUCCESS")
+                pluginPrint(tr("restore.marker_created"), "SUCCESS")
 
                 // 通知用户
-                const msg = `§a[EasyBackuper] §f备份文件 ${selected_backup.name} 已解压完成，请关闭服务器。重新启动服务器后将自动完成回档操作。`
+                const msg = `§a[EasyBackuper] §f` + tr("restore.complete_msg", selected_backup.name)
                 if (yes_no_console == 0 && player_name) {
                     pl = mc.getPlayer(player_name)
                     if (pl) {
@@ -1786,11 +2065,11 @@ function continueRestore(player_name, restore_index, backup_files) {
                     }
                 }
 
-                pluginPrint("请关闭服务器。重新启动服务器后将自动完成回档操作。", "INFO")
+                pluginPrint(tr("restore.close_server"), "INFO")
             } else {
-                pluginPrint(`备份文件解压失败，退出代码: ${exitcode}`, "ERROR")
-                pluginPrint(`输出: ${output}`, "ERROR")
-                const msg = `§c[EasyBackuper] §f备份文件解压失败，退出代码: ${exitcode}`
+                pluginPrint(tr("restore.extract_failed", exitcode), "ERROR")
+                pluginPrint(tr("restore.extract_output", output), "ERROR")
+                const msg = `§c[EasyBackuper] §f` + tr("restore.extract_failed", exitcode)
                 if (yes_no_console == 0 && player_name) {
                     pl = mc.getPlayer(player_name)
                     if (pl) {
@@ -1800,9 +2079,9 @@ function continueRestore(player_name, restore_index, backup_files) {
             }
         })
     } catch (e) {
-        pluginPrint(`continueRestore 错误: ${e}`, "ERROR")
+        pluginPrint(tr("restore.continue_error", String(e)), "ERROR")
         pluginPrint(`错误堆栈: ${e.stack}`, "ERROR")
-        const msg = `§c[EasyBackuper] §f${formatString("回档失败: %s", String(e))}`
+        const msg = `§c[EasyBackuper] §f` + tr("restore.failed", String(e))
         if (yes_no_console == 0 && player_name) {
             pl = mc.getPlayer(player_name)
             if (pl) {
@@ -1822,6 +2101,7 @@ function continueRestore(player_name, restore_index, backup_files) {
  */
 function ReloadPlugin() {
     pluginConfig.reload() // 配置文件重载
+    initI18n();
     // Debug相关
     Debug_Morelogs = pluginConfig.get("Debug_MoreLogs")
     Debug_Morelogs_Player = pluginConfig.get("Debug_MoreLogs_Player")
@@ -1867,7 +2147,7 @@ function InitPluginConfig() {
  * 注册指令
  */
 function RegisterCmd() {
-    const backup_cmd = mc.newCommand("backup", "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件", PermType.GameMasters)
+    const backup_cmd = mc.newCommand("backup", tr("cmd.backup_desc"), PermType.GameMasters)
     backup_cmd.setAlias("easybackup") // 设置别名
 
     backup_cmd.setEnum("ReloadAction", ["reload"]) // 添加枚举选项
@@ -1891,18 +2171,18 @@ function RegisterCmd() {
         switch (results.action) {
             case "reload": // 重载插件配置
                 ReloadPlugin()
-                let x = "重载中..." + '\n' + "配置文件：已重载" + '\n' + '\n'
-                let y = "自动备份状态：" + scheduled_tasks_status + '\n' + "自动清理状态：" + use_number_detection_status + '\n'
-                let z = "Debug更多日志状态(控制台)：" + pluginConfig.get('Debug_MoreLogs') + '\n' + "Debug更多日志状态(玩家)：" + pluginConfig.get('Debug_MoreLogs_Player') + '\n' + "Debug更多日志状态(Cron)：" + pluginConfig.get('Debug_MoreLogs_Cron')
+                let x = tr("cmd.reloading") + '\n' + tr("cmd.config_reloaded") + '\n' + '\n'
+                let y = tr("cmd.auto_backup_status") + scheduled_tasks_status + '\n' + tr("cmd.auto_clean_status") + use_number_detection_status + '\n'
+                let z = tr("cmd.debug_console") + pluginConfig.get('Debug_MoreLogs') + '\n' + tr("cmd.debug_player") + pluginConfig.get('Debug_MoreLogs_Player') + '\n' + tr("cmd.debug_cron") + pluginConfig.get('Debug_MoreLogs_Cron')
                 return output.success(x + y + z)
 
             case "init": // 初始化配置文件
                 InitPluginConfig()
                 ReloadPlugin()
-                let e = "重载中..." + '\n' + "配置文件：已重载" + '\n' + '\n'
-                let f = "自动备份状态：" + scheduled_tasks_status + '\n' + "自动清理状态：" + use_number_detection_status + '\n'
-                let g = "Debug更多日志状态(控制台)：" + pluginConfig.get('Debug_MoreLogs') + '\n' + "Debug更多日志状态(玩家)：" + pluginConfig.get('Debug_MoreLogs_Player') + '\n' + "Debug更多日志状态(Cron)：" + pluginConfig.get('Debug_MoreLogs_Cron')
-                return output.success("初始化文件成功" + '\n' + e + f + g)
+                let e = tr("cmd.reloading") + '\n' + tr("cmd.config_reloaded") + '\n' + '\n'
+                let f = tr("cmd.auto_backup_status") + scheduled_tasks_status + '\n' + tr("cmd.auto_clean_status") + use_number_detection_status + '\n'
+                let g = tr("cmd.debug_console") + pluginConfig.get('Debug_MoreLogs') + '\n' + tr("cmd.debug_player") + pluginConfig.get('Debug_MoreLogs_Player') + '\n' + tr("cmd.debug_cron") + pluginConfig.get('Debug_MoreLogs_Cron')
+                return output.success(tr("cmd.init_success") + '\n' + e + f + g)
         }
 
         // 默认/backup指令后执行的代码
@@ -1914,7 +2194,7 @@ function RegisterCmd() {
     backup_cmd.setup() // 指令初始化(必须)
 
     // 注册restore指令
-    const restore_cmd = mc.newCommand("restore", "Restore backup", PermType.GameMasters)
+    const restore_cmd = mc.newCommand("restore", tr("cmd.restore_desc"), PermType.GameMasters)
     restore_cmd.setEnum("RestoreAction", ["list"])
 
     restore_cmd.mandatory("action", ParamType.Enum, "RestoreAction", 1)
@@ -1931,7 +2211,7 @@ function RegisterCmd() {
         if (origin.typeName == "Player") {
             pl = mc.getPlayer(origin.player.realName)
             if (!pl.isOP()) {
-                pl.tell(`§c[EasyBackuper] §f您没有权限执行此操作！`)
+                pl.tell(tr("cmd.permission_denied"))
                 return output.success()
             }
         }
@@ -1951,9 +2231,9 @@ function RegisterCmd() {
             // 显示帮助信息
             if (origin.typeName == "Player") {
                 pl = mc.getPlayer(origin.player.realName)
-                pl.tell(`§a[EasyBackuper] §f回档命令帮助:\n/restore - 显示此帮助信息\n/restore list <数量> - 列出指定数量的备份\n/restore <索引> - 回档到指定索引的备份`)
+                pl.tell(tr("cmd.restore_help"))
             } else {
-                logger.log("回档命令帮助:\n/restore - 显示此帮助信息\n/restore list <数量> - 列出指定数量的备份\n/restore <索引> - 回档到指定索引的备份")
+                logger.log(tr("cmd.restore_help"))
             }
         }
 
@@ -1971,6 +2251,7 @@ function RegisterCmd() {
  * 加载插件
  */
 function Loadplugin() {
+    initI18n();
     // NOTE: 输出插件LOGO
     logger.setTitle(`\x1b[32m${plugin_name}\x1b[0m`) // 设置日志头
     pluginPrint(`
@@ -1980,24 +2261,24 @@ function Loadplugin() {
 ██╔══╝  ██╔══██║╚════██║  ╚██╔╝  ██╔══██╗██╔══██║██║     ██╔═██╗ ██║   ██║██╔═══╝ ██╔══╝  ██╔══██╗
 ███████╗██║  ██║███████║   ██║   ██████╔╝██║  ██║╚██████╗██║  ██╗╚██████╔╝██║     ███████╗██║  ██║ 
 ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝   `)
-    pluginPrint(`作者：梦涵LOVE          版本：v${plugin_version}`)
+    pluginPrint(tr("plugin.author_version", plugin_version))
     pluginPrint("================================================================================")
     pluginPrint(`${plugin_name} - ${plugin_description}`)
-    pluginPrint("感谢您使用Easy系列插件！")
-    pluginPrint(`本插件使用 ${plugin_license} 许可证协议发布`)
-    pluginPrint(`GitHub 仓库：${plugin_github_link}`)
-    pluginPrint(`插件MineBBS资源帖：${plugin_minebbs_link}`)
-    pluginPrint("Easy系列插件交流群：1083195477")
-    pluginPrint(`作者：梦涵LOVE | 版本：v${plugin_version}`)
+    pluginPrint(tr("plugin.thanks"))
+    pluginPrint(tr("plugin.license_info", plugin_license))
+    pluginPrint(tr("plugin.github", plugin_github_link))
+    pluginPrint(tr("plugin.minebbs", plugin_minebbs_link))
+    pluginPrint(tr("plugin.qq_group"))
+    pluginPrint(tr("plugin.author_version", plugin_version))
     pluginPrint("================================================================================")
 
-    let a = "自动备份状态：" + (scheduled_tasks_status ? "已启用" : "已禁用")
-    let b = "自动清理状态：" + (use_number_detection_status ? "已启用" : "已禁用")
-    let c = "Debug更多日志状态(控制台)：" + (pluginConfig.get('Debug_MoreLogs') ? "已启用" : "已禁用")
-    let d = "Debug更多日志状态(玩家)：" + (pluginConfig.get('Debug_MoreLogs_Player') ? "已启用" : "已禁用")
-    let e = "Debug更多日志状态(Cron)：" + (pluginConfig.get('Debug_MoreLogs_Cron') ? "已启用" : "已禁用")
+    let a = tr("cmd.auto_backup_status") + (scheduled_tasks_status ? tr("status.enabled") : tr("status.disabled"))
+    let b = tr("cmd.auto_clean_status") + (use_number_detection_status ? tr("status.enabled") : tr("status.disabled"))
+    let c = tr("cmd.debug_console") + (pluginConfig.get('Debug_MoreLogs') ? tr("status.enabled") : tr("status.disabled"))
+    let d = tr("cmd.debug_player") + (pluginConfig.get('Debug_MoreLogs_Player') ? tr("status.enabled") : tr("status.disabled"))
+    let e = tr("cmd.debug_cron") + (pluginConfig.get('Debug_MoreLogs_Cron') ? tr("status.enabled") : tr("status.disabled"))
     let bstatsConf = pluginConfig.get("Bstats") || {};
-    let f = "BStats状态：" + (bstatsConf.EnableModule ? "已启用" : "已禁用")
+    let f = tr("plugin.bstats_status") + (bstatsConf.EnableModule ? tr("status.enabled") : tr("status.disabled"))
     pluginPrint(a)
     pluginPrint(b)
     pluginPrint(c)
@@ -2011,13 +2292,13 @@ function Loadplugin() {
         bstatsInstance = new BStatsImpl(29845);
         bstatsInstance.start();
     } catch (e) {
-        pluginPrint("BStats初始化失败: " + e, "ERROR");
+        pluginPrint(tr("plugin.bstats_init_failed", String(e)), "ERROR");
     }
 
     // 检查是否有回档标记文件
     const restore_marker_file = "./temp_restore/restore_marker.json"
     if (File.exists(restore_marker_file)) {
-        pluginPrint("检测到回档标记文件，开始执行回档操作...", "INFO")
+        pluginPrint(tr("restore.marker_detected"), "INFO")
 
         try {
             // 读取标记文件
@@ -2026,7 +2307,7 @@ function Loadplugin() {
 
             // 立即删除标记文件
             File.delete(restore_marker_file)
-            pluginPrint("回档标记文件已删除", "INFO")
+            pluginPrint(tr("restore.marker_deleted"), "INFO")
 
             pluginPrint(`回档信息:`, "INFO")
             pluginPrint(`  备份文件: ${marker_data.backup_file}`, "INFO")
@@ -2067,22 +2348,22 @@ function Loadplugin() {
 
             // 删除原来的世界文件夹
             if (File.exists(marker_data.world_path)) {
-                pluginPrint(`正在删除原世界文件夹: ${marker_data.world_path}`, "INFO")
+                pluginPrint(tr("restore.deleting_world", marker_data.world_path), "INFO")
                 File.delete(marker_data.world_path)
-                pluginPrint("原世界文件夹已删除", "SUCCESS")
+                pluginPrint(tr("restore.world_deleted"), "SUCCESS")
             }
 
             // 移动解压的世界文件夹到目标位置
-            pluginPrint(`正在移动世界文件夹: ${extracted_world_dir} -> ${marker_data.world_path}`, "INFO")
+            pluginPrint(tr("restore.moving_world", extracted_world_dir, marker_data.world_path), "INFO")
             copyDirectory(extracted_world_dir, marker_data.world_path)
-            pluginPrint("世界文件夹已移动", "SUCCESS")
+            pluginPrint(tr("restore.world_moved"), "SUCCESS")
 
             // 删除解压的临时文件夹
             pluginPrint(`正在删除临时文件夹: ${temp_restore_dir}`, "INFO")
             File.delete(temp_restore_dir)
-            pluginPrint("临时文件夹已删除", "SUCCESS")
+            pluginPrint(tr("restore.temp_deleted"), "SUCCESS")
 
-            pluginPrint("回档操作完成", "SUCCESS")
+            pluginPrint(tr("restore.done"), "SUCCESS")
         } catch (e) {
             pluginPrint(`回档操作失败: ${e}`, "ERROR")
             pluginPrint(`错误堆栈: ${e.stack}`, "ERROR")
@@ -2122,7 +2403,7 @@ function Loadplugin() {
             }
         }
         if (!ll.hasExported("ecu", "EasyCheckUpdate")) {
-            pluginPrint("请安装 EasyCheckUpdate 插件以为本插件提供更新检查功能", "WARNING")
+            pluginPrint(tr("plugin.update_hint"), "WARNING")
         } else {
             ll.exports(CheckUpdate, "ecu", `${plugin_name}`)
         }
@@ -2138,8 +2419,8 @@ function Loadplugin() {
 // NOTE: "onUnload"
 ll.onUnload(() => {
     stopCronScheduler()
-    pluginPrint("插件卸载中...", "INFO")
-    pluginPrint("插件卸载完成", "INFO")
+    pluginPrint(tr("plugin.unloading"), "INFO")
+    pluginPrint(tr("plugin.unloaded"), "INFO")
 })
 // #endregion
 
