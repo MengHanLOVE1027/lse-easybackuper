@@ -231,8 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.8-beta.3",
-    plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
+    plugin_version = "0.4.8",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
     plugin_update_url = "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/main/update_versions.json"
@@ -658,6 +657,7 @@ const I18N_DEFAULTS = {
         "cmd.permission_denied": "§c[EasyBackuper] §f您没有权限执行此操作！",
         "cmd.restore_help": "回档命令帮助:\n/restore - 显示此帮助信息\n/restore list <数量> - 列出指定数量的备份\n/restore <索引> - 回档到指定索引的备份",
 
+        "plugin.description": "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
         "plugin.author_version": "作者：梦涵LOVE | 版本：v%s",
         "plugin.thanks": "感谢您使用Easy系列插件！",
         "plugin.license_info": "本插件使用 %s 许可证协议发布",
@@ -772,6 +772,7 @@ const I18N_DEFAULTS = {
         "cmd.permission_denied": "§c[EasyBackuper] §fYou do not have permission to do this!",
         "cmd.restore_help": "Restore command help:\n/restore - Show this help\n/restore list <count> - List specified number of backups\n/restore <index> - Restore to the specified backup index",
 
+        "plugin.description": "A lightweight, high-performance, and feature-rich hot backup plugin for Minecraft servers based on LSE.",
         "plugin.author_version": "Author: MengHanLOVE | Version: v%s",
         "plugin.thanks": "Thank you for using EasyBackuper!",
         "plugin.license_info": "Licensed under %s",
@@ -1599,8 +1600,9 @@ function Backup(pl, callback) {
             File.mkdir("./logs/EasyBackuper/")
         }
 
-        // 调用 mhlove-truncate.exe 截取文件
-        system.newProcess(`cmd /c ${pluginConfig.get("exe_mhlove_truncate_path")} "./file_paths_tmp.json" "${backup_tmp_path}"`, (exitcode, output) => {
+        // 调用 mhlove-truncate.exe 截取文件（传递当前语言给 Rust 工具）
+        const truncateLang = (i18nLang === "en_US") ? "--lang=en" : "--lang=zh";
+        system.newProcess(`cmd /c ${pluginConfig.get("exe_mhlove_truncate_path")} "./file_paths_tmp.json" "${backup_tmp_path}" ${truncateLang}`, (exitcode, output) => {
             if (exitcode === 0) {
                 pluginPrint(`\n${output}`, "DEBUG")
                 pluginPrint(tr("backup.truncate_success"), "SUCCESS")
@@ -2423,7 +2425,7 @@ function Loadplugin() {
 ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝   `)
     pluginPrint(tr("plugin.author_version", plugin_version))
     pluginPrint("================================================================================")
-    pluginPrint(`${plugin_name} - ${plugin_description}`)
+    pluginPrint(`${plugin_name} - ${tr("plugin.description")}`)
     pluginPrint(tr("plugin.thanks"))
     pluginPrint(tr("plugin.license_info", plugin_license))
     pluginPrint(tr("plugin.github", plugin_github_link))
