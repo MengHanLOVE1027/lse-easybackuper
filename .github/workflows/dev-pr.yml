@@ -13,7 +13,6 @@ jobs:
   create-pr:
     name: Create PR to main
     runs-on: ubuntu-latest
-    # 跳过从 main 合并到 dev 的提交（避免循环 PR）
     if: github.ref == 'refs/heads/dev'
 
     steps:
@@ -21,6 +20,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Check if PR already exists
         id: check
@@ -52,15 +56,28 @@ jobs:
           set -e
           VERSION="${{ steps.version.outputs.version }}"
 
-          # 一次 API 调用获取所有提交和作者
+          # 获取 dev 相对于 main 的提交
           git fetch origin main
           COMMITS=$(gh api "repos/${{ github.repository }}/compare/main...dev" \
-            --jq '[.commits[]? | "- \(.commit.message | split("\n")[0]) (@\(.author.login // "unknown"))"] | join("\n")' 2>/dev/null)
+            --jq '[.commits[]? | select(.author.login != "github-actions[bot]")] | map("- \(.commit.message | split("\n")[0]) (@\(.author.login))") | join("\n")' \
+            2>/dev/null || echo "")
           COMMITS="${COMMITS:-无新提交}"
 
           # 提取贡献者
           AUTHORS=$(gh api "repos/${{ github.repository }}/compare/main...dev" \
             --jq '[.commits[].author.login // empty] | unique | map(select(. != null and . != "github-actions[bot]")) | map("@" + .) | join(" ")' 2>/dev/null || echo "")
+
+          # ── 从 CHANGELOG.md 提取当前版本的分类总结 ──
+          CHANGELOG_SUMMARY=""
+          if [ -f CHANGELOG.md ]; then
+            CHANGELOG_SUMMARY=$(awk -v ver="$VERSION" '
+              BEGIN { found=0 }
+              $0 ~ "^## \\[" ver "\\]" { found=1; next }
+              found && /^## \[/ { exit }
+              found && /^---$/ { exit }
+              found
+            ' CHANGELOG.md | awk 'NF{p=1} p' || echo "")
+          fi
 
           # 判断版本类型
           case "$VERSION" in
@@ -68,16 +85,33 @@ jobs:
             *) TYPE="🚀 正式版" ;;
           esac
 
+          # ── 组装 PR Body ──
           BODY=$(cat <<EOF
           ## ${TYPE}: EasyBackuper v${VERSION}
 
-          ### 📝 更新内容
-          ${COMMITS}
-
-          ### 👥 贡献者
-          ${AUTHORS}
+          ### 📝 更新内容 · Changes
           EOF
           )
+
+          # CHANGELOG.md 分类总结优先
+          if [ -n "$CHANGELOG_SUMMARY" ]; then
+            BODY="${BODY}"$'\n'"${CHANGELOG_SUMMARY}"$'\n'
+            BODY="${BODY}"$'\n'"---"$'\n'
+            BODY="${BODY}"$'\n'"<details>"$'\n'
+            BODY="${BODY}"$'\n'"<summary>📋 原始提交记录</summary>"$'\n'
+            BODY="${BODY}"$'\n'
+          fi
+
+          BODY="${BODY}${COMMITS}"
+
+          if [ -n "$CHANGELOG_SUMMARY" ]; then
+            BODY="${BODY}"$'\n'
+            BODY="${BODY}"$'\n'"</details>"
+          fi
+
+          BODY="${BODY}"$'\n'
+          BODY="${BODY}"$'\n'"### 👥 贡献者 · Contributors"$'\n'
+          BODY="${BODY}"$'\n'"${AUTHORS}"
 
           {
             echo "BODY<<EOF"

@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint & Build Check
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── JSON 语法检查 ──
+      - name: Validate manifest.json
+        shell: bash
+        run: |
+          python3 -m json.tool manifest.json > /dev/null
+          echo "✅ manifest.json is valid JSON"
+
+      - name: Validate tooth.json
+        shell: bash
+        run: |
+          python3 -m json.tool tooth.json > /dev/null
+          echo "✅ tooth.json is valid JSON"
+
+      # ── 版本一致性检查 ──
+      - name: Check version consistency
+        shell: bash
+        run: |
+          MANIFEST_VER=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          TOOTH_VER=$(python3 -c "import json; print(json.load(open('tooth.json'))['version'])")
+          echo "manifest.json: $MANIFEST_VER"
+          echo "tooth.json:    $TOOTH_VER"
+          if [ "$MANIFEST_VER" != "$TOOTH_VER" ]; then
+            echo "❌ Version mismatch!"
+            exit 1
+          fi
+          echo "✅ Versions match: $MANIFEST_VER"
+
+      # ── JS 语法检查 ──
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check JS syntax
+        shell: bash
+        run: |
+          node --check EasyBackuper.js
+          echo "✅ EasyBackuper.js syntax OK"
+
+      # ── 必需文件检查 ──
+      - name: Verify required files
+        shell: bash
+        run: |
+          set -e
+          missing=0
+
+          for f in EasyBackuper.js manifest.json 7za.exe; do
+            if [ -f "$f" ]; then
+              echo "✅ $f"
+            else
+              echo "❌ $f missing"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            echo "❌ Missing required files!"
+            exit 1
+          fi
+
+      # ── 模拟打包检查 ──
+      - name: Verify build structure
+        shell: bash
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          ZIP_NAME="EasyBackuper-v${VERSION}.zip"
+          PACKAGE_DIR="EasyBackuper"
+
+          mkdir -p "${PACKAGE_DIR}"
+          cp EasyBackuper.js   "${PACKAGE_DIR}/"
+          cp manifest.json     "${PACKAGE_DIR}/"
+          cp 7za.exe           "${PACKAGE_DIR}/"
+
+          zip -r "${ZIP_NAME}" "${PACKAGE_DIR}"
+
+          echo "----- Build result -----"
+          ls -lh "${ZIP_NAME}"
+          echo ""
+          echo "Contents:"
+          unzip -l "${ZIP_NAME}"
+
+          echo "✅ Package built successfully: ${ZIP_NAME}"
