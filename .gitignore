@@ -8,3 +8,5 @@ dist/
 
 *.zip
 mhlove-truncate.exe
+# Rust build output
+truncate-rust/target/
