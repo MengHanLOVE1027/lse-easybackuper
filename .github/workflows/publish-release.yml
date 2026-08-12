@@ -1,9 +1,11 @@
 name: Build & Release
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types:
+      - closed
   workflow_dispatch:
 
 concurrency:
@@ -65,6 +67,7 @@ jobs:
     needs: build-truncate
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
@@ -182,11 +185,24 @@ jobs:
             *)                         TYPE="🚀 正式版" ;;
           esac
 
+          # 获取上一版本 tag
           git fetch --tags --force
           PREV_TAG=$(git tag --sort=-v:refname | grep -v "${TAG}" | head -n1)
 
+          # ── 从 CHANGELOG.md 提取当前版本的分类总结 ──
+          CHANGELOG_SUMMARY=""
+          if [ -f CHANGELOG.md ]; then
+            CHANGELOG_SUMMARY=$(awk -v ver="$VERSION" '
+              BEGIN { found=0 }
+              $0 ~ "^## \\[" ver "\\]" { found=1; next }
+              found && /^## \[/ { exit }
+              found && /^---$/ { exit }
+              found
+            ' CHANGELOG.md | awk 'NF{p=1} p' || echo "")
+          fi
+
           if [ -n "$PREV_TAG" ]; then
-            DETAILS=$(gh api "repos/${{ github.repository }}/compare/${PREV_TAG}...HEAD" \
+            COMMITS=$(gh api "repos/${{ github.repository }}/compare/${PREV_TAG}...HEAD" \
               --jq '[.commits[]? | select(.author.login != "github-actions[bot]")] | map("- \(.commit.message | split("\n")[0]) (@\(.author.login))") | join("\n")' \
               2>/dev/null || echo "")
 
@@ -196,14 +212,15 @@ jobs:
 
             CHANGELOG_LINK="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
           else
-            DETAILS="- 🎉 EasyBackuper v${VERSION} 首次发布"
+            COMMITS="- 🎉 EasyBackuper v${VERSION} 首次发布"
             AUTHORS=""
             CHANGELOG_LINK=""
           fi
 
-          DETAILS="${DETAILS:-（暂无提交信息）}"
+          COMMITS="${COMMITS:-（暂无提交信息）}"
           AUTHORS="${AUTHORS:-（暂无）}"
 
+          # ── 组装 Release Body ──
           cat > /tmp/release_body.md <<BODYEOF
           ## ${TYPE}: EasyBackuper v${VERSION}
 
@@ -216,8 +233,26 @@ jobs:
           > 解压后放入 \`plugins/\` 目录即可使用。
 
           ### 📝 更新内容 · Changes
+          BODYEOF
 
-          ${DETAILS}
+          # CHANGELOG.md 分类总结优先
+          if [ -n "$CHANGELOG_SUMMARY" ]; then
+            printf '%s\n\n' "$CHANGELOG_SUMMARY" >> /tmp/release_body.md
+            echo '---' >> /tmp/release_body.md
+            echo >> /tmp/release_body.md
+            echo '<details>' >> /tmp/release_body.md
+            echo '<summary>📋 原始提交记录</summary>' >> /tmp/release_body.md
+            echo >> /tmp/release_body.md
+          fi
+
+          printf '%s\n' "$COMMITS" >> /tmp/release_body.md
+
+          if [ -n "$CHANGELOG_SUMMARY" ]; then
+            echo >> /tmp/release_body.md
+            echo '</details>' >> /tmp/release_body.md
+          fi
+
+          cat >> /tmp/release_body.md <<BODYEOF
 
           ### 👥 贡献者 · Contributors
 

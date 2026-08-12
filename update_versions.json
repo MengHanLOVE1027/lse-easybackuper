@@ -1,38 +1,44 @@
 {
-    "latest_version": "0.4.7",
+    "latest_version": "0.4.8-beta.1",
     "versions": {
+        "0.4.8-beta.1": {
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.8-beta.1/EasyBackuper-v0.4.8-beta.1.zip",
+            "update_content": "feat: v0.4.8-beta.1 新增 i18n 国际化支持（zh_CN/en_US），通过配置文件 Language 字段切换语言",
+            "author": "梦涵LOVE",
+            "update_time": "2026-08-12 12:03:00"
+        },
         "0.4.7": {
-            "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.7/EasyBackuper-v0.4.7.zip",
             "update_content": "fix: 更新版本号至 0.4.7，修复部分 bug，优化备份状态管理",
             "author": "梦涵LOVE",
             "update_time": "2026-08-09 21:24:00"
         },
         "0.4.6": {
-            "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.6/EasyBackuper-v0.4.6.zip",
             "update_content": "fix: 更新版本号至 0.4.6，修复部分 bug，优化备份状态管理，修复cron触发时机",
             "author": "梦涵LOVE",
             "update_time": "2026-08-09 21:08:00"
         },
         "0.4.6-beta.5": {
-            "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.6-beta.5/EasyBackuper-v0.4.6-beta.5.zip",
             "update_content": "更新版本号为 v0.4.6-beta.5，修复了部分 bug.",
             "author": "梦涵LOVE",
             "update_time": "2026-08-09 20:46:00"
         },
         "0.4.6-beta.4": {
-            "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.6-beta.4/EasyBackuper-v0.4.6-beta.4.zip",
             "update_content": "更新版本号为 v0.4.6-beta.4，修复了部分 bug.",
             "author": "梦涵LOVE",
             "update_time": "2026-08-09 20:16:00"
         },
         "0.4.5": {
-            "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.5/EasyBackuper-v0.4.5.zip",
             "update_content": "更新版本号为 v0.4.5，修复了部分 bug.",
             "author": "梦涵LOVE",
             "update_time": "2026-03-03 00:20:00"
         },
         "0.4.4": {
-            "download_url": "https://raw.githubusercontent.com/MengHanLOVE1027/lse-easybackuper/refs/heads/main/EasyBackuper.js",
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.4/EasyBackuper-v0.4.4.zip",
             "update_content": "更新版本号为 v0.4.4，适配了 EasyCheckUpdate 插件，修复了部分 bug，支持BStats统计和多彩日志输出，不再支持多语言（太臃肿了）",
             "author": "梦涵LOVE",
             "update_time": "2026-03-02 22:32:00"
