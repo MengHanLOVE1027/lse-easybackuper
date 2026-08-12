@@ -37,6 +37,7 @@ LSE-EasyBackuper 是一个专为 LeviLamina 服务器设计的备份插件，旨
 | ⚡**多线程加速**   | 并行文件处理，大幅提升备份速度    |
 | 🗜️**多格式支持**   | 支持 7z、zip、tar.gz 多种压缩格式 |
 | 🔄**备份恢复**     | 一键恢复备份，支持自动重启        |
+| 🌍**多语言界面**   | 支持中文、英文等多语言切换        |
 | 📝**完整日志系统** | 彩色日志输出，按日期分割存储      |
 
 ---
@@ -51,9 +52,13 @@ LSE-EasyBackuper 是一个专为 LeviLamina 服务器设计的备份插件，旨
 ├── plugins/
 │   └── EasyBackuper/                    # 插件资源目录
 │       ├── 7za.exe                      # 7z压缩工具
+│       ├── mhlove-truncate.exe          # 文件截取工具（Rust）
 │       ├── EasyBackuper.js              # 插件主文件
-│       └── config/
-│           └── EasyBackuper.json        # 配置文件
+│       ├── config/
+│       │   └── EasyBackuper.json        # 配置文件
+│       └── langs/                       # 多语言文件
+│           ├── zh_CN.json               # 简体中文
+│           └── en_US.json               # 英语
 └── backup/                              # 备份文件存储目录
 ```
 
@@ -77,7 +82,7 @@ LSE-EasyBackuper 是一个专为 LeviLamina 服务器设计的备份插件，旨
    ```
 
 3. **安装依赖文件**
-   - 将 `7za.exe`、`mhlove-truncate.exe` 放入 `plugins/lse-easybackuper/` 目录 (mhlove-truncate.exe 可从 [Release页面](https://github.com/MengHanLOVE1027/lse-easybackuper/releases) 或者 [MineBBS](https://www.minebbs.com/resources/easybackuper-eb-minecraft.7771/) 下载的压缩包中获取)
+   - 将 `7za.exe`、`mhlove-truncate.exe` 放入 `plugins/EasyBackuper/` 目录
 
 4. **启动服务器**
    - 重启服务器或使用 `/ll reload EasyBackuper` 命令
@@ -93,6 +98,9 @@ LSE-EasyBackuper 是一个专为 LeviLamina 服务器设计的备份插件，旨
 
 ```json
 {
+  // 🌐 国际化设置
+  "Language": "zh_CN",  // 语言选项: zh_CN, en_US
+
   // 🗜️ 压缩配置
   "Compression": {
     "method": "zip",  // 压缩算法: 7z, zip, tar

@@ -52,6 +52,7 @@ Server Root/
 ├── plugins/
 │   └── EasyBackuper/                    # Plugin resource directory
 │       ├── 7za.exe                      # 7z compression tool
+│       ├── mhlove-truncate.exe          # File truncation tool (Rust)
 │       ├── EasyBackuper.js              # Main plugin file
 │       ├── config/
 │       │   └── EasyBackuper.json        # Configuration file
@@ -81,7 +82,7 @@ Server Root/
    ```
 
 3. **Install Dependencies**
-   - Place `7za.exe`, `mhlove-truncate.exe` in the `plugins/lse-easybackuper/` directory (mhlove-truncate.exe can be obtained from the [Release Page](https://github.com/MengHanLOVE1027/lse-easybackuper/releases) or [MineBBS](https://www.minebbs.com/resources/easybackuper-eb-minecraft.7771/))
+   - Place `7za.exe`, `mhlove-truncate.exe` in the `plugins/EasyBackuper/` directory
 
 4. **Start Server**
    - Restart the server or use `/ll reload EasyBackuper` command
