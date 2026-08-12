@@ -4,10 +4,21 @@ EasyBackuper 所有重要变更记录。格式遵循 [Keep a Changelog](https://
 
 ---
 
-## [0.4.8] - 2026-08-12
+## [0.4.8-beta.1] - 2026-08-12
 
 ### ✨ 新增 · Added
 - i18n 国际化支持（zh_CN / en_US），通过配置文件 `Language` 字段切换语言
+
+### 🔧 修复 · Fixed
+- 修复版本号配置，确保版本正确显示
+- 更新 `update_versions.json` 中各版本的 `download_url` 为 Release 下载链接
+
+### 🏗️ 构建 · Build
+- 添加 CI 工作流（Lint & Build Check）
+- 优化 PR 生成内容和 Release 说明，支持从 CHANGELOG.md 提取分类总结
+
+### 📝 文档 · Docs
+- 更新 README 和 README_EN，添加版本和下载统计徽章
 
 ---
 
