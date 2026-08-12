@@ -1,6 +1,12 @@
 {
-    "latest_version": "0.4.8-beta.2",
+    "latest_version": "0.4.8-beta.3",
     "versions": {
+        "0.4.8-beta.3": {
+            "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.8-beta.3/EasyBackuper-v0.4.8-beta.3.zip",
+            "update_content": "feat: v0.4.8-beta.3 截取工具改由 Rust 编写，支持中英文环境检测；修复目录创建和文件截取权限问题",
+            "author": "梦涵LOVE",
+            "update_time": "2026-08-12 16:15:00"
+        },
         "0.4.8-beta.2": {
             "download_url": "https://github.com/MengHanLOVE1027/lse-easybackuper/releases/download/v0.4.8-beta.2/EasyBackuper-v0.4.8-beta.2.zip",
             "update_content": "feat: v0.4.8-beta.2 新增配置/语言文件版本迁移系统，支持插件升级时自动合并新配置项和翻译键",

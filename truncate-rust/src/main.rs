@@ -1,5 +1,5 @@
 use rayon::prelude::*;
-use std::fs;
+use std::fs::{self, OpenOptions};
 use std::path::Path;
 use std::process;
 
@@ -161,8 +161,8 @@ fn truncate_one(entry: &str, backup_tmp_path: &Path, lang: Lang) -> Result<(), (
         Lang::En => &MSG_EN,
     };
 
-    // 打开文件，获取原始大小
-    let file = match fs::File::open(&real_path) {
+    // 打开文件（需要写权限才能截取）
+    let file = match OpenOptions::new().write(true).open(&real_path) {
         Ok(f) => f,
         Err(e) => {
             eprintln!(
