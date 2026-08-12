@@ -2,6 +2,7 @@
 build/
 config/
 i18n/
+langs/
 dist/
 .vscode
 

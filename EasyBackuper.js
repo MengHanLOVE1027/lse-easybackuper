@@ -231,7 +231,7 @@ class BStatsImpl {
 // 声明常量
 const plugin_name = "EasyBackuper",
     plugin_name_smallest = "easybackuper",
-    plugin_version = "0.4.8-beta.1",
+    plugin_version = "0.4.8-beta.2",
     plugin_description = "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
     plugin_github_link = "https://github.com/MengHanLOVE1027/lse-easybackuper",
     plugin_minebbs_link = "https://www.minebbs.com/resources/easybackuper-eb.7771/",
@@ -314,6 +314,63 @@ let pluginConfig = new JsonConfigFile(
     plugin_path + `/config/${plugin_name}.json`,
     JSON.stringify(pluginConfigFile)
 )
+
+/**
+ * 配置迁移：根据版本号将新增的配置项合并到用户已有的配置文件
+ * - 保留用户所有自定义值，仅添加默认配置中存在但用户配置缺失的键
+ * - 通过 _config_version 记录当前配置版本，避免重复迁移
+ */
+function migrateConfig() {
+    const storedVersion = pluginConfig.get("_config_version") || "0.0.0";
+    if (storedVersion === plugin_version) return;
+
+    /**
+     * 递归合并默认值到配置对象（只添加缺失的键，不覆盖已有值）
+     * @param {JsonConfigFile} cfg - 配置对象
+     * @param {Object} defaults - 默认值对象
+     * @returns {boolean} 是否有变更
+     */
+    function deepMerge(cfg, defaults) {
+        let changed = false;
+        for (const key of Object.keys(defaults)) {
+            const defVal = defaults[key];
+            const curVal = cfg.get(key);
+
+            if (curVal === undefined || curVal === null) {
+                // 键不存在 → 添加默认值
+                cfg.set(key, defVal);
+                changed = true;
+            } else if (
+                typeof defVal === "object" && defVal !== null &&
+                !Array.isArray(defVal) &&
+                typeof curVal === "object" && curVal !== null &&
+                !Array.isArray(curVal)
+            ) {
+                // 嵌套对象 → 递归合并子键
+                let subChanged = false;
+                const merged = Object.assign({}, curVal);
+                for (const subKey of Object.keys(defVal)) {
+                    if (!(subKey in curVal)) {
+                        merged[subKey] = defVal[subKey];
+                        subChanged = true;
+                    }
+                }
+                if (subChanged) {
+                    cfg.set(key, merged);
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
+
+    const changed = deepMerge(pluginConfig, pluginConfigFile);
+    pluginConfig.set("_config_version", plugin_version);
+
+    if (changed) {
+        logger.info(tr("migration.config_updated", plugin_version));
+    }
+}
 // #endregion
 
 // TAG: 全局变量模块
@@ -509,10 +566,9 @@ function pluginPrint(text, level = "INFO") {
 // TAG: i18n 国际化模块
 // #region i18n 国际化模块
 
-// 翻译表
-const I18N = {
+// 内置默认翻译表
+const I18N_DEFAULTS = {
     "zh_CN": {
-        // BStats 遥测
         "bstats.config_sync_failed": "同步BStats配置失败: %s",
         "bstats.disabled": "遥测模块已禁用，跳过上报。",
         "bstats.report_success": "遥测数据上报成功。",
@@ -520,14 +576,12 @@ const I18N = {
         "bstats.startup": "%s遥测模块已启动。首次数据将在 10 秒后发送。",
         "bstats.read_failed": "读取bstats配置文件失败: %s",
 
-        // Cron 调度
         "cron.skip_duplicate": "Cron 跳过：同秒已触发过 (sec=%s)",
         "cron.skip_running": "Cron 跳过：上一次备份仍在进行中",
         "cron.auto_backup_starting": "自动备份正在启动中...",
         "cron.started": "Cron 调度器已启动（1s 精度）",
         "cron.stopped": "Cron 调度器已停止",
 
-        // 清理
         "cleanup.files_in_world": "存档文件夹内的文件: ",
         "cleanup.files_to_delete": "需要删除的存档: ",
         "cleanup.success": "清理成功，清理了：%s",
@@ -535,7 +589,6 @@ const I18N = {
         "cleanup.nothing": "本小姐看了一下，很干净捏~",
         "cleanup.starting": "自动清理正在启动中...",
 
-        // 备份
         "backup.copying_file": "操作中：%s ==> %s",
         "backup.copy_error": "拷贝出错 %s: %s",
         "backup.broadcast_start": "§2§l[EasyBackuper]§r§3开始备份力！",
@@ -555,7 +608,6 @@ const I18N = {
         "backup.compress_error": "压缩出错",
         "backup.get_size_failed": "获取压缩包大小失败: %s",
 
-        // 回档
         "restore.no_backups": "没有找到可用的备份文件",
         "restore.list_header": "===== 可用备份列表 =====",
         "restore.list_item": "[%d] %s (%s)",
@@ -595,7 +647,6 @@ const I18N = {
         "restore.list_error": "listBackups 错误: %s",
         "restore.continue_error": "continueRestore 错误: %s",
 
-        // 命令
         "cmd.backup_desc": "一个基于 LSE引擎 的轻量级、高性能、功能全面的Minecraft服务器热备份插件",
         "cmd.restore_desc": "回档备份",
         "cmd.reloading": "重载中...",
@@ -609,7 +660,6 @@ const I18N = {
         "cmd.permission_denied": "§c[EasyBackuper] §f您没有权限执行此操作！",
         "cmd.restore_help": "回档命令帮助:\n/restore - 显示此帮助信息\n/restore list <数量> - 列出指定数量的备份\n/restore <索引> - 回档到指定索引的备份",
 
-        // 插件加载
         "plugin.author_version": "作者：梦涵LOVE | 版本：v%s",
         "plugin.thanks": "感谢您使用Easy系列插件！",
         "plugin.license_info": "本插件使用 %s 许可证协议发布",
@@ -622,16 +672,17 @@ const I18N = {
         "plugin.unloaded": "插件卸载完成",
         "plugin.bstats_init_failed": "BStats初始化失败: %s",
 
-        // 通用状态
         "status.enabled": "已启用",
         "status.disabled": "已禁用",
 
-        // 内部
         "log.write_failed": "写入日志文件失败: %s",
+
+        "migration.lang_updated": "语言文件已更新至版本 %s，已添加新的翻译键",
+        "migration.config_updated": "配置文件已更新至版本 %s，已添加新的配置项",
+        "migration.lang_exported": "已导出默认语言文件: %s",
     },
 
     "en_US": {
-        // BStats
         "bstats.config_sync_failed": "Failed to sync BStats config: %s",
         "bstats.disabled": "Telemetry module disabled, skipping report.",
         "bstats.report_success": "Telemetry data reported successfully.",
@@ -639,14 +690,12 @@ const I18N = {
         "bstats.startup": "%s telemetry module started. First data will be sent in 10 seconds.",
         "bstats.read_failed": "Failed to read bstats config: %s",
 
-        // Cron
         "cron.skip_duplicate": "Cron skip: already triggered this second (sec=%s)",
         "cron.skip_running": "Cron skip: previous backup still in progress",
         "cron.auto_backup_starting": "Auto-backup starting...",
         "cron.started": "Cron scheduler started (1s precision)",
         "cron.stopped": "Cron scheduler stopped",
 
-        // Cleanup
         "cleanup.files_in_world": "Files in world folder: ",
         "cleanup.files_to_delete": "Files to delete: ",
         "cleanup.success": "Cleanup successful, removed: %s",
@@ -654,7 +703,6 @@ const I18N = {
         "cleanup.nothing": "All clean, nothing to remove~",
         "cleanup.starting": "Auto-cleanup starting...",
 
-        // Backup
         "backup.copying_file": "Copying: %s ==> %s",
         "backup.copy_error": "Copy error %s: %s",
         "backup.broadcast_start": "§2§l[EasyBackuper]§r§3Starting backup!",
@@ -674,7 +722,6 @@ const I18N = {
         "backup.compress_error": "Compression error",
         "backup.get_size_failed": "Failed to get archive size: %s",
 
-        // Restore
         "restore.no_backups": "No backup files found",
         "restore.list_header": "===== Available Backups =====",
         "restore.list_item": "[%d] %s (%s)",
@@ -714,7 +761,6 @@ const I18N = {
         "restore.list_error": "listBackups error: %s",
         "restore.continue_error": "continueRestore error: %s",
 
-        // Commands
         "cmd.backup_desc": "A lightweight, high-performance, and feature-rich hot backup plugin for Minecraft servers based on LSE.",
         "cmd.restore_desc": "Restore backup",
         "cmd.reloading": "Reloading...",
@@ -728,7 +774,6 @@ const I18N = {
         "cmd.permission_denied": "§c[EasyBackuper] §fYou do not have permission to do this!",
         "cmd.restore_help": "Restore command help:\n/restore - Show this help\n/restore list <count> - List specified number of backups\n/restore <index> - Restore to the specified backup index",
 
-        // Plugin
         "plugin.author_version": "Author: MengHanLOVE | Version: v%s",
         "plugin.thanks": "Thank you for using EasyBackuper!",
         "plugin.license_info": "Licensed under %s",
@@ -741,16 +786,23 @@ const I18N = {
         "plugin.unloaded": "Plugin unloaded",
         "plugin.bstats_init_failed": "BStats init failed: %s",
 
-        // Status
         "status.enabled": "Enabled",
         "status.disabled": "Disabled",
 
-        // Internal
         "log.write_failed": "Failed to write log file: %s",
+
+        "migration.lang_updated": "Language files updated to version %s, new translation keys added",
+        "migration.config_updated": "Config updated to version %s, new options added",
+        "migration.lang_exported": "Default language file exported: %s",
     }
 };
 
-// 当前使用的语言
+// 语言文件目录
+const LANGS_DIR = plugin_path + "/langs/";
+
+// 运行时翻译数据（从外部文件加载，失败则回退到内置默认值）
+let i18nData = {};
+// 当前语言
 let i18nLang = "zh_CN";
 
 /**
@@ -760,14 +812,13 @@ let i18nLang = "zh_CN";
  * @returns {string} 翻译后的文本
  */
 function tr(key, ...args) {
-    const langData = I18N[i18nLang];
-    let text = langData ? langData[key] : undefined;
+    let text = i18nData[key];
     if (text === undefined) {
-        // 回退到 zh_CN
-        text = I18N["zh_CN"][key];
+        // 回退到内置默认语言的对应值
+        const defaults = I18N_DEFAULTS[i18nLang] || I18N_DEFAULTS["zh_CN"];
+        text = defaults[key];
     }
     if (text === undefined) {
-        // 最终回退：显示 key 本身
         return key;
     }
     if (args.length > 0) {
@@ -776,12 +827,121 @@ function tr(key, ...args) {
     return text;
 }
 
-/** 初始化 i18n 语言设置 */
+/**
+ * 从 langs/ 目录加载语言文件
+ * @param {string} lang - 语言代码
+ */
+function loadLangFile(lang) {
+    const langFile = LANGS_DIR + lang + ".json";
+    try {
+        if (File.exists(langFile)) {
+            const content = File.readFrom(langFile);
+            const data = JSON.parse(content);
+            if (typeof data === "object") {
+                // 以默认值为基础，文件内容覆盖
+                const defaults = I18N_DEFAULTS[lang] || I18N_DEFAULTS["zh_CN"];
+                i18nData = Object.assign({}, defaults, data);
+                return;
+            }
+        }
+    } catch (e) {
+        // 文件损坏，回退
+    }
+    // 回退到内置默认
+    i18nData = Object.assign({}, I18N_DEFAULTS[lang] || I18N_DEFAULTS["zh_CN"]);
+}
+
+/**
+ * 语言文件迁移：根据版本号将新增的翻译键合并到已有的语言文件中
+ * - 保留用户所有自定义翻译，仅添加内置默认中新增的键
+ * - 通过 langs/.version 记录当前版本，避免重复迁移
+ * - 如语言文件损坏则用默认值重建
+ */
+function migrateLangFiles() {
+    const versionFile = LANGS_DIR + ".version";
+    let storedVersion = "0.0.0";
+
+    if (File.exists(versionFile)) {
+        try {
+            storedVersion = File.readFrom(versionFile).trim();
+        } catch (e) {
+            // 读取失败，视为旧版本，执行完整迁移
+        }
+    }
+
+    if (storedVersion === plugin_version) return;
+
+    for (const lang of Object.keys(I18N_DEFAULTS)) {
+        const langFile = LANGS_DIR + lang + ".json";
+        const defaults = I18N_DEFAULTS[lang];
+
+        if (File.exists(langFile)) {
+            try {
+                const content = File.readFrom(langFile);
+                const data = JSON.parse(content);
+                if (typeof data === "object") {
+                    // 合并：只添加内置默认中存在但文件缺失的键
+                    let changed = false;
+                    for (const key of Object.keys(defaults)) {
+                        if (!(key in data)) {
+                            data[key] = defaults[key];
+                            changed = true;
+                        }
+                    }
+                    if (changed) {
+                        File.writeTo(langFile, JSON.stringify(data, null, 4));
+                        logger.info(tr("migration.lang_updated", plugin_version) + " [" + lang + "]");
+                    }
+                }
+            } catch (e) {
+                // 文件损坏 → 用默认值重建
+                try {
+                    File.writeTo(langFile, JSON.stringify(defaults, null, 4));
+                    logger.info(tr("migration.lang_exported", lang));
+                } catch (e2) {
+                    // 写入失败忽略，内置默认值仍可用
+                }
+            }
+        } else {
+            // 文件不存在 → 导出默认文件
+            try {
+                File.writeTo(langFile, JSON.stringify(defaults, null, 4));
+                logger.info(tr("migration.lang_exported", lang));
+            } catch (e) {
+                // 写入失败忽略
+            }
+        }
+    }
+
+    // 更新版本标记
+    try {
+        File.writeTo(versionFile, plugin_version);
+    } catch (e) {
+        // 写入失败不影响运行，下次启动会再次迁移
+    }
+}
+
+/**
+ * 初始化 i18n
+ * - 迁移语言文件（如插件版本已更新）
+ * - 确保 langs/ 目录存在
+ * - 导出内置默认语言文件（如不存在）
+ * - 加载当前语言
+ */
 function initI18n() {
+    // 确保 langs 目录存在
+    if (!File.exists(LANGS_DIR)) {
+        new File(LANGS_DIR, File.WriteMode).close();
+    }
+
+    // 迁移语言文件：合并新版本中新增的翻译键
+    migrateLangFiles();
+
     i18nLang = pluginConfig.get("Language") || "zh_CN";
-    if (!I18N[i18nLang]) {
+    if (!I18N_DEFAULTS[i18nLang]) {
         i18nLang = "zh_CN";
     }
+    loadLangFile(i18nLang);
 }
 // #endregion
 
@@ -2101,6 +2261,7 @@ function continueRestore(player_name, restore_index, backup_files) {
  */
 function ReloadPlugin() {
     pluginConfig.reload() // 配置文件重载
+    migrateConfig();      // 合并新版本新增的配置项
     initI18n();
     // Debug相关
     Debug_Morelogs = pluginConfig.get("Debug_MoreLogs")
@@ -2251,6 +2412,7 @@ function RegisterCmd() {
  * 加载插件
  */
 function Loadplugin() {
+    migrateConfig();
     initI18n();
     // NOTE: 输出插件LOGO
     logger.setTitle(`\x1b[32m${plugin_name}\x1b[0m`) // 设置日志头
